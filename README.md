@@ -1,70 +1,242 @@
-# Getting Started with Create React App
+# 🔧 OficiosYA - Plataforma de Servicios del Hogar
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## 📋 Descripción del Proyecto
 
-## Available Scripts
+**OficiosYA** es una plataforma web innovadora que conecta a solicitantes de servicios del hogar con prestadores especializados en diferentes oficios. Nuestro sistema facilita la búsqueda, cotización y contratación de servicios como plomería, electricidad, pintura, carpintería, gasista, albañilería, refrigeración,herrería, etc.
 
-In the project directory, you can run:
+### 🎯 Objetivo
+Crear un ecosistema digital que simplifique el proceso de encontrar y contratar profesionales confiables para servicios del hogar, proporcionando transparencia, seguridad y calidad en cada transacción.
+
+---
+
+## 👥 Equipo de Desarrollo
+
+| Integrante | Rol |
+|------------|-----|
+| **Camila Kapp** | Integrante 1 |
+| **Ivan Rodriguez** | Integrante 2 |
+| **Federico Ramirez** | Integrante 3 |
+| **Gonzalo Velazquez** | Integrante 4 |
+
+---
+
+## 🏫 Información Académica
+
+- **Universidad:** Universidad Nacional San Antonio de Areco
+- **Carrera:** Analista en Sistemas
+- **Materia:** Proyecto de Desarrollo
+- **Profesor:** Pablo Marolli
+- **Período:** 2025
+
+---
+
+## 🚀 Características Principales
+
+### 👤 Para Solicitantes
+- ✅ Registro y gestión de perfil personalizado
+- 📝 Creación de solicitudes detalladas de servicios
+- 🔍 Búsqueda de prestadores por categoría y localidad
+- 💰 Recepción y comparación de presupuestos
+- ⭐ Sistema de calificación y reseñas
+- 📱 Seguimiento en tiempo real del estado de solicitudes
+
+### 🔨 Para Prestadores
+- 👷 Perfil profesional con portfolio de trabajos
+- 📋 Gestión de solicitudes recibidas
+- 💵 Envío de presupuestos personalizados
+- 📊 Panel de control con estadísticas
+- 🏆 Sistema de reputación y calificaciones
+- 📍 Gestión de zonas de trabajo
+
+### 🛡️ Para Administradores
+- 👥 Gestión completa de usuarios
+- 📈 Análisis y reportes del sistema
+- 🔒 Moderación de contenido y calificaciones
+- ⚙️ Configuración de parámetros del sistema
+
+---
+
+## 🛠️ Tecnologías Utilizadas
+
+### Frontend
+- **React.js** - Biblioteca de JavaScript para interfaces de usuario
+- **Bootstrap 5** - Framework CSS para diseño responsivo
+- **React Router** - Navegación entre componentes
+- **Bootstrap Icons** - Iconografía moderna
+
+### Backend
+- **Node.js** - Entorno de ejecución de JavaScript
+- **Express.js** - Framework web para Node.js
+- **MySQL** - Base de datos relacional
+
+### Herramientas de Desarrollo
+- **Git** - Control de versiones
+- **GitHub** - Repositorio remoto
+- **VS Code** - Editor de código
+- **Postman** - Testing de APIs
+
+---
+
+## 📁 Estructura del Proyecto
+
+```
+oficiosya-frontend/
+├── public/
+│   ├── index.html
+│   ├── manifest.json
+│   └── robots.txt
+├── src/
+│   ├── components/
+│   │   └── Navbar.jsx
+│   ├── pages/
+│   │   ├── Home.jsx
+│   │   ├── Login.jsx
+│   │   ├── Registro.jsx
+│   │   ├── PanelSolicitante.jsx
+│   │   ├── PanelPrestador.jsx
+│   │   ├── PanelAdmin.jsx
+│   │   ├── SolicitudDetalle.jsx
+│   │   └── PerfilPrestador.jsx
+│   ├── api/
+│   │   └── api.js
+│   ├── utils/
+│   │   └── RutaProtegidaPrestador.js
+│   ├── App.js
+│   └── index.js
+├── package.json
+└── README.md
+```
+
+---
+
+## ⚙️ Instalación y Configuración
+
+### Prerrequisitos
+- Node.js (versión 14 o superior)
+- npm (gestor de paquetes)
+- Git
+
+### Pasos de Instalación
+
+1. **Clonar el repositorio**
+   ```bash
+   git clone https://github.com/gonzav104/oficiosya-frontend.git
+   cd oficiosya-frontend
+   ```
+
+2. **Instalar dependencias**
+   ```bash
+   npm install
+   ```
+
+3. **Configurar variables de entorno**
+   ```bash
+   # Crear archivo .env en la raíz del proyecto
+   REACT_APP_API_URL=http://localhost:3001
+   ```
+
+4. **Ejecutar la aplicación**
+   ```bash
+   npm start
+   ```
+
+5. **Acceder a la aplicación**
+   - Abrir navegador en: `http://localhost:3000`
+
+---
+
+## 🎮 Uso de la Aplicación
+
+### Estados de Solicitudes
+
+| Estado | Descripción | Acciones Disponibles |
+|--------|-------------|---------------------|
+| **Iniciada** | Solicitud publicada | Buscar prestadores, solicitar presupuestos |
+| **Enviada** | Presupuestos solicitados | Ver prestadores contactados |
+| **Cotizada** | Presupuesto recibido | Aceptar/rechazar presupuesto |
+| **Pendiente de Calificación** | Trabajo completado | Calificar prestador |
+| **Cerrada** | Proceso finalizado | Ver resumen del trabajo |
+
+### Flujo de Trabajo
+1. **Solicitante** crea una solicitud de servicio
+2. **Sistema** recomienda prestadores según categoría y localidad
+3. **Solicitante** envía solicitudes a prestadores seleccionados
+4. **Prestadores** envían presupuestos personalizados
+5. **Solicitante** acepta presupuesto y coordina trabajo
+6. **Ambas partes** se califican mutuamente
+
+---
+
+## 🔧 Scripts Disponibles
 
 ### `npm start`
-
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
-
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+Ejecuta la aplicación en modo desarrollo.
+- URL: `http://localhost:3000`
+- Recarga automática al hacer cambios
 
 ### `npm test`
-
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+Ejecuta las pruebas unitarias en modo interactivo.
 
 ### `npm run build`
-
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
-
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+Construye la aplicación para producción en la carpeta `build/`.
+- Optimizada para mejor rendimiento
+- Archivos minificados con hash
 
 ### `npm run eject`
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+## 🎨 Características de UI/UX
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+- 📱 **Diseño Responsivo** - Adaptable a móviles, tablets y desktop
+- 🎨 **Interfaz Moderna** - Bootstrap 5 con componentes personalizados
+- ⚡ **Navegación Intuitiva** - React Router para SPA
+- 🔄 **Estados Dinámicos** - Feedback visual en tiempo real
+- ✨ **Animaciones Suaves** - Transiciones CSS para mejor experiencia
+- 🌈 **Paleta de Colores Profesional** - Verde #1b8a5e como color principal
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+---
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+## 🤝 Contribución
 
-## Learn More
+Para contribuir al proyecto:
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+1. Fork del repositorio
+2. Crear rama feature (`git checkout -b feature/nueva-funcionalidad`)
+3. Commit de cambios (`git commit -m 'Agregar nueva funcionalidad'`)
+4. Push a la rama (`git push origin feature/nueva-funcionalidad`)
+5. Crear Pull Request
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+### Estándares de Código
+- Usar ES6+ y React Hooks
+- Componentes funcionales preferentemente
+- Nombres descriptivos para variables y funciones
+- Comentarios en código complejo
+- CSS modular con BEM methodology
 
-### Code Splitting
+---
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+## 📄 Licencia
 
-### Analyzing the Bundle Size
+Este proyecto es desarrollado por el grupo 3 (OficiosYA) con fines académicos para la Universidad Nacional San Antonio de Areco.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+---
 
-### Making a Progressive Web App
+## 📞 Contacto
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+Para consultas sobre el proyecto:
 
-### Advanced Configuration
+- **Repositorio:** [github.com/gonzav104/oficiosya-frontend](https://github.com/gonzav104/oficiosya-frontend)
+- **Universidad:** Universidad Nacional San Antonio de Areco
+- **Profesor:** Pablo Marolli
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+---
 
-### Deployment
+## 🙏 Agradecimientos
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+- Universidad Nacional San Antonio de Areco por brindar el espacio académico
+- Profesor Pablo Marolli por la guía y enseñanza
+- Comunidad React.js por la documentación y recursos
+- Bootstrap team por el framework CSS
 
-### `npm run build` fails to minify
+---
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+**Desarrollado con ❤️ por el equipo de OficiosYA - 2025**
