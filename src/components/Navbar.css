@@ -1,0 +1,69 @@
+/* ===== FONDO Y ESTILO GENERAL DEL NAVBAR ===== */
+.custom-navbar {
+  background-color: #222831; /* Fondo carbón oscuro y sólido */
+  height: 85px;
+  padding: 0 30px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* ===== LOGO ===== */
+.navbar-logo {
+  height: 65px;
+  width: auto;
+  object-fit: contain;
+  transition: transform 0.2s ease;
+}
+.navbar-logo:hover {
+  transform: scale(1.03);
+}
+
+/* ===== ESTILO BASE PARA AMBOS BOTONES ===== */
+.btn-navbar {
+  color: #ffffff !important; /* Texto siempre blanco */
+  border-radius: 50px; /* Bordes totalmente redondeados */
+  padding: 10px 25px; /* Más espaciado interno */
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+  border: 2px solid transparent; /* Borde base transparente */
+  display: flex;
+  align-items: center;
+  gap: 14px; /* Espacio aumentado entre ícono y texto */
+}
+
+/* ===== BOTÓN PRIMARIO (REGISTRARSE) - VERDE SÓLIDO ===== */
+.btn-navbar-primary {
+  background-color: #1b8a5e; /* Tu color verde */
+  box-shadow: 0 4px 10px rgba(27, 138, 94, 0.4); /* Sombra suave verde */
+}
+
+.btn-navbar-primary:hover {
+  background-color: #17734f; /* Verde un poco más oscuro */
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(27, 138, 94, 0.5);
+}
+
+/* ===== BOTÓN SECUNDARIO (INICIAR SESIÓN) - BORDE VERDE ===== */
+.btn-navbar-secondary {
+  background-color: #1b8a5e;
+  box-shadow: 0 4px 10px rgba(27, 138, 94, 0.4) ;
+}
+
+.btn-navbar-secondary:hover {
+  background-color: #1b8a5e; /* Relleno verde al pasar el mouse */
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(27, 138, 94, 0.5);
+}
+
+/* ===== ÍCONOS EN LOS BOTONES ===== */
+.btn-navbar i {
+  font-size: 1.1rem; /* Íconos un poco más grandes */
+  margin-right: 6px; /* Asegura separación en navegadores que no soportan gap */
+}
+
+
+
+
+
+
