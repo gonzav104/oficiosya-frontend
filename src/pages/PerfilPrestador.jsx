@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import './PerfilPrestador.css';
+import { Button } from '../components/common';
+import '../styles/pages/PerfilPrestador.css';
 
-// --- Datos de Ejemplo - Mock Data ---
+// Datos de Ejemplo
 const prestadoresData = {
   101: {
     id: 101,
@@ -19,7 +20,7 @@ const prestadoresData = {
     cantidadCalificaciones: 127,
     trabajosRealizados: 156,
     
-    // RF26: Calificaciones y comentarios
+    // Calificaciones y comentarios
     calificaciones: [
       {
         id: 1,
@@ -55,7 +56,7 @@ const prestadoresData = {
       }
     ],
     
-    // RF6: Imágenes de trabajos previos con descripción
+    // Imágenes de trabajos previos con descripción
     imagenesTrabajos: [
       {
         id: 1,
@@ -110,7 +111,6 @@ const prestadoresData = {
     imagenesTrabajos: []
   }
 };
-// ----------------------------------------------------
 
 function PerfilPrestador() {
   const { id } = useParams();
@@ -122,7 +122,6 @@ function PerfilPrestador() {
   // Buscar prestador
   const prestador = prestadoresData[parseInt(id)];
 
-  // Validación: prestador no encontrado
   if (!prestador) {
     return (
       <div className="container text-center py-5">
@@ -130,10 +129,9 @@ function PerfilPrestador() {
           <i className="bi bi-exclamation-triangle fs-1 d-block mb-3"></i>
           <h3>Prestador no encontrado</h3>
           <p>El perfil que buscas no existe o fue eliminado.</p>
-          <button className="btn btn-primary mt-3" onClick={() => navigate(-1)}>
-            <i className="bi bi-arrow-left me-2"></i>
+          <Button variant="primary" className="mt-3" onClick={() => navigate(-1)} icon="arrow-left">
             Volver
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -173,10 +171,9 @@ function PerfilPrestador() {
     <div className="perfil-prestador-container">
       {/* BOTÓN VOLVER */}
       <div className="mb-4">
-        <button className="btn btn-outline-secondary" onClick={() => navigate(-1)}>
-          <i className="bi bi-arrow-left me-2"></i>
+        <Button variant="outline-secondary" onClick={() => navigate(-1)} icon="arrow-left">
           Volver
-        </button>
+        </Button>
       </div>
 
       <div className="row">
@@ -196,7 +193,7 @@ function PerfilPrestador() {
                 {prestador.localidad}
               </p>
 
-              {/* Categorías - RF6 */}
+              {/* Categorías */}
               <div className="categorias-badges mb-3">
                 {prestador.categorias.map(cat => (
                   <span key={cat} className="badge bg-primary me-1 mb-1">
@@ -206,7 +203,7 @@ function PerfilPrestador() {
                 ))}
               </div>
 
-              {/* Calificación - RF26 */}
+              {/* Calificación */}
               <div className="calificacion-principal mb-3">
                 <div className="estrellas-grandes mb-1">
                   {renderEstrellas(prestador.calificacionPromedio)}
@@ -237,7 +234,7 @@ function PerfilPrestador() {
                 </div>
               </div>
 
-              {/* IMPORTANTE: RF8 - NO mostrar datos de contacto */}
+              {/* NO mostrar datos de contacto */}
               <div className="alert alert-info mb-3">
                 <i className="bi bi-shield-check me-2"></i>
                 <small>
@@ -247,20 +244,23 @@ function PerfilPrestador() {
               </div>
 
               {/* Botón solicitar presupuesto */}
-              <Link 
+              <Button 
+                as={Link}
                 to={`/solicitud/1/prestador/${id}/solicitar-presupuesto`} 
-                className="btn btn-success btn-lg w-100 mb-2"
+                variant="success"
+                size="large"
+                className="w-100 mb-2"
+                icon="envelope-check"
               >
-                <i className="bi bi-envelope-check me-2"></i>
                 Solicitar Presupuesto
-              </Link>
+              </Button>
             </div>
           </div>
         </div>
 
         {/* COLUMNA DERECHA - DETALLES */}
         <div className="col-lg-8">
-          {/* DESCRIPCIÓN - RF6 */}
+          {/* DESCRIPCIÓN */}
           <div className="card info-card mb-4">
             <div className="card-body">
               <h4 className="card-title">
@@ -271,7 +271,7 @@ function PerfilPrestador() {
             </div>
           </div>
 
-          {/* GALERÍA DE TRABAJOS - RF6 */}
+          {/* GALERÍA DE TRABAJOS */}
           {prestador.imagenesTrabajos.length > 0 && (
             <div className="card info-card mb-4">
               <div className="card-body">
@@ -312,7 +312,7 @@ function PerfilPrestador() {
             </div>
           )}
 
-          {/* CALIFICACIONES Y COMENTARIOS - RF26 */}
+          {/* CALIFICACIONES Y COMENTARIOS */}
           <div className="card info-card">
             <div className="card-body">
               <h4 className="card-title mb-4">
@@ -354,15 +354,15 @@ function PerfilPrestador() {
                   {/* Botón ver más calificaciones */}
                   {prestador.calificaciones.length > 3 && (
                     <div className="text-center mt-3">
-                      <button 
-                        className="btn btn-outline-primary"
+                      <Button 
+                        variant="outline-primary"
                         onClick={() => setMostrarTodasCalificaciones(!mostrarTodasCalificaciones)}
                       >
                         {mostrarTodasCalificaciones 
                           ? 'Ver menos' 
                           : `Ver todas las calificaciones (${prestador.calificaciones.length - 3} más)`
                         }
-                      </button>
+                      </Button>
                     </div>
                   )}
                 </>

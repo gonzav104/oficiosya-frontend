@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import './EditarPerfilPrestador.css';
+import { Button, ValidatedInput } from '../components/common';
+import '../styles/pages/EditarPerfilPrestador.css';
 
 const categoriasDisponibles = [
   'Plomería',
@@ -17,12 +18,10 @@ const categoriasDisponibles = [
   'Aire Acondicionado'
 ];
 
-// CU-004: Gestión de Perfil del Prestador
-function EditarPerfilPrestador({ onProfileComplete }) {
+function EditarPerfilPrestador() {
   const navigate = useNavigate();
   const [errores, setErrores] = useState({});
 
-  // RF6: Campos del perfil del prestador
   const [formData, setFormData] = useState({
     nombre: '',
     apellido: '',
@@ -30,13 +29,36 @@ function EditarPerfilPrestador({ onProfileComplete }) {
     whatsapp: '',
     descripcion: '',
     categorias: [],
-    imagenes: []
+    imagenes: [],
+    provincia: '',
+    localidad: '',
+    direccion: '',
+    edad: ''
   });
+
+  // Cargar datos existentes del prestador al montar el componente
+  useEffect(() => {
+
+    const datosExistentes = {
+      nombre: 'Juan',
+      apellido: 'Pérez', 
+      telefono: '11-2345-6789',
+      whatsapp: 'https://wa.me/5491123456789',
+      descripcion: 'Plomero con 10 años de experiencia...',
+      categorias: ['Plomería', 'Gasista'],
+      imagenes: [],
+      provincia: 'Buenos Aires',
+      localidad: 'La Plata',
+      direccion: 'Av. 7 N° 1234',
+      edad: '35'
+    };
+    
+    setFormData(datosExistentes);
+  }, []);
 
   // Estado para búsqueda de categorías
   const [busquedaCategoria, setBusquedaCategoria] = useState('');
 
-  // Sugerencias filtradas
   const sugerenciasFiltradas = categoriasDisponibles.filter(
     cat => 
       cat.toLowerCase().includes(busquedaCategoria.toLowerCase()) && 
@@ -59,7 +81,6 @@ function EditarPerfilPrestador({ onProfileComplete }) {
     }
   };
 
-  // Agregar categoría
   const agregarCategoria = (categoria) => {
     if (!formData.categorias.includes(categoria)) {
       setFormData(prev => ({
@@ -67,7 +88,6 @@ function EditarPerfilPrestador({ onProfileComplete }) {
         categorias: [...prev.categorias, categoria]
       }));
       setBusquedaCategoria('');
-      // Limpiar error
       if (errores.categorias) {
         setErrores(prev => ({
           ...prev,
@@ -77,7 +97,6 @@ function EditarPerfilPrestador({ onProfileComplete }) {
     }
   };
 
-  // Remover categoría
   const removerCategoria = (categoria) => {
     setFormData(prev => ({
       ...prev,
@@ -85,12 +104,10 @@ function EditarPerfilPrestador({ onProfileComplete }) {
     }));
   };
 
-  // Manejo de imágenes (máximo 5, 5MB cada una) - RF6
   const handleImagenesChange = (e) => {
     const files = Array.from(e.target.files);
     const nuevosErrores = {};
 
-    // Validar cantidad (máximo 5)
     if (files.length > 5) {
       nuevosErrores.imagenes = 'Máximo 5 imágenes permitidas';
       setErrores(prev => ({ ...prev, ...nuevosErrores }));
@@ -98,7 +115,6 @@ function EditarPerfilPrestador({ onProfileComplete }) {
       return;
     }
 
-    // Validar tamaño y formato
     const archivosValidos = [];
     for (let file of files) {
       if (file.size > 5 * 1024 * 1024) {
@@ -127,132 +143,102 @@ function EditarPerfilPrestador({ onProfileComplete }) {
     }
   };
 
-  // Validaciones según CU-004
+  // Validaciones
   const validarFormulario = () => {
     const nuevosErrores = {};
 
-    // Nombre: obligatorio, solo letras y espacios
     if (!formData.nombre.trim()) {
       nuevosErrores.nombre = 'El nombre es obligatorio';
     } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(formData.nombre)) {
-      nuevosErrores.nombre = 'El nombre y apellido solo pueden contener letras y espacios';
+      nuevosErrores.nombre = 'El nombre solo puede contener letras y espacios';
     }
 
-    // Apellido: obligatorio, solo letras y espacios
     if (!formData.apellido.trim()) {
       nuevosErrores.apellido = 'El apellido es obligatorio';
     } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(formData.apellido)) {
-      nuevosErrores.apellido = 'El nombre y apellido solo pueden contener letras y espacios';
+      nuevosErrores.apellido = 'El apellido solo puede contener letras y espacios';
     }
 
-    // Teléfono: entre 8 y 15 dígitos
     const telefonoLimpio = formData.telefono.replace(/\D/g, '');
     if (!telefonoLimpio) {
       nuevosErrores.telefono = 'El teléfono es obligatorio';
     } else if (telefonoLimpio.length < 8 || telefonoLimpio.length > 15) {
-      nuevosErrores.telefono = 'Ingrese un número de celular válido (entre 8 y 15 dígitos)';
+      nuevosErrores.telefono = 'Ingrese un número válido (entre 8 y 15 dígitos)';
     }
 
-    // WhatsApp: formato correcto
     if (!formData.whatsapp.trim()) {
       nuevosErrores.whatsapp = 'El enlace de WhatsApp es obligatorio';
     } else if (!formData.whatsapp.startsWith('https://wa.me/')) {
-      nuevosErrores.whatsapp = 'Ingrese un enlace válido de WhatsApp (ejemplo: https://wa.me/549XXXXXXXXXX)';
+      nuevosErrores.whatsapp = 'Ingrese un enlace válido de WhatsApp';
     }
 
-    // Categorías: al menos una
     if (formData.categorias.length === 0) {
-      nuevosErrores.categorias = 'Debe seleccionar al menos una categoría de servicio';
+      nuevosErrores.categorias = 'Debe seleccionar al menos una categoría';
     }
 
-    // Descripción: opcional pero si existe debe tener contenido válido
     if (formData.descripcion.trim() && formData.descripcion.length < 20) {
       nuevosErrores.descripcion = 'La descripción debe tener al menos 20 caracteres';
     }
 
-    setErrores(nuevosErrores);
-    return Object.keys(nuevosErrores).length === 0;
+    // Validar ubicación y edad
+    const edad = parseInt(formData.edad);
+    if (!formData.edad) {
+      nuevosErrores.edad = 'La edad es obligatoria';
+    } else if (isNaN(edad) || edad < 18) {
+      nuevosErrores.edad = 'Debes ser mayor de 18 años';
+    }
+
+    if (!formData.provincia) {
+      nuevosErrores.provincia = 'La provincia es obligatoria';
+    }
+
+    if (!formData.localidad.trim()) {
+      nuevosErrores.localidad = 'La localidad es obligatoria';
+    }
+
+    return nuevosErrores;
   };
 
-  // Guardar perfil - CU-004
+  // Guardar cambios
   const handleSubmit = (e) => {
     e.preventDefault();
+    
+    const erroresValidacion = validarFormulario();
+    setErrores(erroresValidacion);
 
-    if (validarFormulario()) {
-      console.log('Perfil guardado:', formData);
-      
-      // Simular guardado exitoso
-      alert('✅ Perfil actualizado correctamente.\n\nAhora puedes acceder al panel de prestador.');
-      
-      // Marcar perfil como completo y redirigir
-      if (onProfileComplete) {
-        onProfileComplete();
-      }
+    if (Object.keys(erroresValidacion).length === 0) {
+      console.log('Perfil actualizado:', formData);
+      alert('✅ Perfil actualizado correctamente.');
       navigate('/panel-prestador');
     }
   };
 
-  // Calcular progreso del perfil
-  const calcularProgreso = () => {
-    let completados = 0;
-    const totalCampos = 6; // nombre, apellido, telefono, whatsapp, categorias, descripcion
-
-    if (formData.nombre.trim()) completados++;
-    if (formData.apellido.trim()) completados++;
-    if (formData.telefono.trim()) completados++;
-    if (formData.whatsapp.trim()) completados++;
-    if (formData.categorias.length > 0) completados++;
-    if (formData.descripcion.trim()) completados++;
-
-    return Math.round((completados / totalCampos) * 100);
-  };
-
-  const progreso = calcularProgreso();
-
   return (
     <div className="editar-perfil-container">
-      {/* HEADER */}
+      {/* HEADER - Solo para edición */}
       <div className="perfil-header mb-4">
-        <div>
-          <h2 className="mb-2">
-            <i className="bi bi-person-badge me-2"></i>
-            Completá tu Perfil de Prestador
-          </h2>
-          <p className="text-muted mb-0">
-            Para poder recibir solicitudes de trabajo, es necesario completar tu información profesional
-          </p>
-        </div>
-      </div>
-
-      {/* BARRA DE PROGRESO */}
-      <div className="card mb-4">
-        <div className="card-body">
-          <div className="d-flex justify-content-between align-items-center mb-2">
-            <strong>Progreso del perfil</strong>
-            <span className="badge bg-primary">{progreso}%</span>
+        <div className="d-flex align-items-center">
+          <Button 
+            variant="outline-secondary"
+            className="me-3"
+            onClick={() => navigate('/panel-prestador')}
+            icon="arrow-left"
+          />
+          <div>
+            <h2 className="mb-0">
+              <i className="bi bi-pencil-square me-2"></i>
+              Editar Mi Perfil
+            </h2>
+            <p className="text-muted mb-0">
+              Actualiza tu información y servicios
+            </p>
           </div>
-          <div className="progress" style={{ height: '10px' }}>
-            <div 
-              className="progress-bar bg-success" 
-              role="progressbar" 
-              style={{ width: `${progreso}%` }}
-              aria-valuenow={progreso}
-              aria-valuemin="0" 
-              aria-valuemax="100"
-            ></div>
-          </div>
-          {progreso < 100 && (
-            <small className="text-muted mt-2 d-block">
-              <i className="bi bi-info-circle me-1"></i>
-              Completa todos los campos para acceder al panel
-            </small>
-          )}
         </div>
       </div>
 
       <form onSubmit={handleSubmit}>
         {/* INFORMACIÓN PERSONAL */}
-        <div className="card perfil-section-card mb-4">
+        <div className="card mb-4">
           <div className="card-header">
             <i className="bi bi-person-fill me-2"></i>
             Información Personal
@@ -260,249 +246,139 @@ function EditarPerfilPrestador({ onProfileComplete }) {
           <div className="card-body">
             <div className="row">
               <div className="col-md-6 mb-3">
-                <label htmlFor="nombre" className="form-label">
-                  Nombre <span className="text-danger">*</span>
-                </label>
-                <input 
-                  type="text" 
-                  className={`form-control ${errores.nombre ? 'is-invalid' : ''}`}
-                  id="nombre"
+                <ValidatedInput
+                  type="text"
+                  label="Nombre"
                   name="nombre"
                   value={formData.nombre}
                   onChange={handleInputChange}
                   placeholder="Juan"
+                  error={errores.nombre}
+                  required
                 />
-                {errores.nombre && (
-                  <div className="invalid-feedback">{errores.nombre}</div>
-                )}
               </div>
 
               <div className="col-md-6 mb-3">
-                <label htmlFor="apellido" className="form-label">
-                  Apellido <span className="text-danger">*</span>
-                </label>
-                <input 
-                  type="text" 
-                  className={`form-control ${errores.apellido ? 'is-invalid' : ''}`}
-                  id="apellido"
+                <ValidatedInput
+                  type="text"
+                  label="Apellido"
                   name="apellido"
                   value={formData.apellido}
                   onChange={handleInputChange}
                   placeholder="Pérez"
+                  error={errores.apellido}
+                  required
                 />
-                {errores.apellido && (
-                  <div className="invalid-feedback">{errores.apellido}</div>
-                )}
+              </div>
+            </div>
+
+            <div className="row">
+              <div className="col-md-6 mb-3">
+                <ValidatedInput
+                  type="number"
+                  label="Edad"
+                  name="edad"
+                  value={formData.edad}
+                  onChange={handleInputChange}
+                  min={18}
+                  max={100}
+                  error={errores.edad}
+                  required
+                />
               </div>
             </div>
 
             <div className="mb-3">
-              <label htmlFor="descripcion" className="form-label">
-                Descripción de tus servicios <span className="text-muted">(opcional)</span>
-              </label>
-              <textarea 
-                className={`form-control ${errores.descripcion ? 'is-invalid' : ''}`}
-                id="descripcion"
+              <ValidatedInput
+                as="textarea"
+                label="Descripción de servicios"
                 name="descripcion"
                 value={formData.descripcion}
                 onChange={handleInputChange}
-                rows="4"
-                placeholder="Contale a los clientes sobre tu experiencia, qué trabajos realizás, etc..."
-              ></textarea>
-              <small className="text-muted">
-                Mínimo 20 caracteres. Actual: {formData.descripcion.length}
-              </small>
-              {errores.descripcion && (
-                <div className="invalid-feedback d-block">{errores.descripcion}</div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* CATEGORÍAS DE SERVICIO - RF6 */}
-        <div className="card perfil-section-card mb-4">
-          <div className="card-header">
-            <i className="bi bi-tools me-2"></i>
-            Categorías de Servicio
-          </div>
-          <div className="card-body">
-            <label className="form-label">
-              Buscá y agregá tus especialidades <span className="text-danger">*</span>
-            </label>
-            <div className="position-relative mb-3">
-              <input 
-                type="text"
-                className={`form-control ${errores.categorias ? 'is-invalid' : ''}`}
-                placeholder="Ej: Electricidad, Plomería..."
-                value={busquedaCategoria}
-                onChange={(e) => setBusquedaCategoria(e.target.value)}
+                rows={3}
+                placeholder="Describe tu experiencia y servicios..."
+                error={errores.descripcion}
+                helperText={`Mínimo 20 caracteres. Actual: ${formData.descripcion.length}`}
               />
-              {busquedaCategoria && sugerenciasFiltradas.length > 0 && (
-                <ul className="list-group position-absolute w-100 sugerencias-list">
-                  {sugerenciasFiltradas.map(cat => (
-                    <li 
-                      key={cat} 
-                      className="list-group-item list-group-item-action"
-                      onClick={() => agregarCategoria(cat)}
-                    >
-                      <i className="bi bi-plus-circle me-2"></i>
-                      {cat}
-                    </li>
-                  ))}
-                </ul>
-              )}
-              {errores.categorias && (
-                <div className="invalid-feedback d-block">{errores.categorias}</div>
-              )}
-            </div>
-
-            {/* Categorías seleccionadas */}
-            <div className="categorias-seleccionadas">
-              <small className="text-muted d-block mb-2">Categorías seleccionadas:</small>
-              {formData.categorias.length > 0 ? (
-                <div className="d-flex flex-wrap gap-2">
-                  {formData.categorias.map(cat => (
-                    <span key={cat} className="badge badge-categoria">
-                      <i className="bi bi-tools me-1"></i>
-                      {cat}
-                      <button 
-                        type="button" 
-                        className="btn-close btn-close-white ms-2" 
-                        onClick={() => removerCategoria(cat)}
-                      ></button>
-                    </span>
-                  ))}
-                </div>
-              ) : (
-                <div className="alert alert-warning">
-                  <i className="bi bi-exclamation-triangle me-2"></i>
-                  <small>No has seleccionado ninguna categoría aún</small>
-                </div>
-              )}
             </div>
           </div>
         </div>
 
-        {/* INFORMACIÓN DE CONTACTO - RF6 */}
-        <div className="card perfil-section-card mb-4">
+        {/* UBICACIÓN */}
+        <div className="card mb-4">
           <div className="card-header">
-            <i className="bi bi-telephone-fill me-2"></i>
-            Información de Contacto
+            <i className="bi bi-geo-alt-fill me-2"></i>
+            Ubicación
           </div>
           <div className="card-body">
             <div className="row">
               <div className="col-md-6 mb-3">
-                <label htmlFor="telefono" className="form-label">
-                  Número de Celular <span className="text-danger">*</span>
+                <label htmlFor="provincia" className="form-label">
+                  Provincia <span className="text-danger">*</span>
                 </label>
-                <input 
-                  type="tel" 
-                  className={`form-control ${errores.telefono ? 'is-invalid' : ''}`}
-                  id="telefono"
-                  name="telefono"
-                  value={formData.telefono}
+                <select 
+                  className={`form-select ${errores.provincia ? 'is-invalid' : ''}`}
+                  id="provincia"
+                  name="provincia"
+                  value={formData.provincia}
                   onChange={handleInputChange}
-                  placeholder="11-2345-6789"
-                />
-                <small className="text-muted">Entre 8 y 15 dígitos</small>
-                {errores.telefono && (
-                  <div className="invalid-feedback d-block">{errores.telefono}</div>
+                >
+                  <option value="">Selecciona una provincia</option>
+                  <option value="Buenos Aires">Buenos Aires</option>
+                  <option value="Córdoba">Córdoba</option>
+                  <option value="Santa Fe">Santa Fe</option>
+                </select>
+                {errores.provincia && (
+                  <div className="invalid-feedback">{errores.provincia}</div>
                 )}
               </div>
 
               <div className="col-md-6 mb-3">
-                <label htmlFor="whatsapp" className="form-label">
-                  Enlace de WhatsApp <span className="text-danger">*</span>
-                </label>
-                <input 
-                  type="url" 
-                  className={`form-control ${errores.whatsapp ? 'is-invalid' : ''}`}
-                  id="whatsapp"
-                  name="whatsapp"
-                  value={formData.whatsapp}
+                <ValidatedInput
+                  type="text"
+                  label="Localidad"
+                  name="localidad"
+                  value={formData.localidad}
                   onChange={handleInputChange}
-                  placeholder="https://wa.me/5491123456789"
+                  placeholder="La Plata"
+                  error={errores.localidad}
+                  required
                 />
-                <small className="text-muted">Formato: https://wa.me/549...</small>
-                {errores.whatsapp && (
-                  <div className="invalid-feedback d-block">{errores.whatsapp}</div>
-                )}
               </div>
             </div>
 
-            <div className="alert alert-info">
-              <i className="bi bi-shield-check me-2"></i>
-              <small>
-                <strong>Privacidad:</strong> Tus datos de contacto solo se mostrarán a los clientes 
-                cuando acepten tu presupuesto.
-              </small>
+            <div className="mb-3">
+              <ValidatedInput
+                type="text"
+                label="Dirección"
+                name="direccion"
+                value={formData.direccion}
+                onChange={handleInputChange}
+                placeholder="Av. 7 N° 1234"
+                helperText="(opcional)"
+              />
             </div>
           </div>
         </div>
-
-        {/* GALERÍA DE TRABAJOS PREVIOS - RF6 */}
-        <div className="card perfil-section-card mb-4">
-          <div className="card-header">
-            <i className="bi bi-images me-2"></i>
-            Galería de Trabajos Previos <span className="text-muted">(opcional)</span>
-          </div>
-          <div className="card-body">
-            <label htmlFor="imagenes" className="form-label">
-              Subí ejemplos de tus trabajos
-            </label>
-            <input 
-              className={`form-control ${errores.imagenes ? 'is-invalid' : ''}`}
-              type="file" 
-              id="imagenes"
-              onChange={handleImagenesChange}
-              multiple 
-              accept=".jpg,.jpeg,.png"
-            />
-            <small className="text-muted d-block mt-1">
-              Máximo 5 imágenes. Formatos: JPG, JPEG, PNG. Tamaño máximo: 5MB por imagen.
-            </small>
-            {errores.imagenes && (
-              <div className="invalid-feedback d-block">{errores.imagenes}</div>
-            )}
-            {formData.imagenes.length > 0 && (
-              <div className="mt-3">
-                <div className="alert alert-success">
-                  <i className="bi bi-check-circle me-2"></i>
-                  <small>{formData.imagenes.length} imagen(es) seleccionada(s)</small>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* BOTONES DE ACCIÓN */}
-        <div className="text-center">
-          <button 
-            type="button" 
-            className="btn btn-outline-secondary btn-lg me-3"
-            onClick={() => navigate('/')}
+        {/* BOTONES */}
+        <div className="d-grid gap-2 d-md-flex justify-content-md-end">
+          <Button 
+            variant="outline-secondary"
+            className="me-md-2"
+            onClick={() => navigate('/panel-prestador')}
+            icon="x-circle"
           >
-            <i className="bi bi-x-circle me-2"></i>
             Cancelar
-          </button>
-          <button 
+          </Button>
+          <Button 
             type="submit" 
-            className="btn btn-success btn-lg"
-            disabled={progreso < 100}
+            variant="success"
+            size="large"
+            icon="check-circle"
           >
-            <i className="bi bi-check-circle me-2"></i>
-            Guardar y Acceder al Panel
-          </button>
+            Guardar Cambios
+          </Button>
         </div>
-
-        {progreso < 100 && (
-          <div className="text-center mt-3">
-            <small className="text-danger">
-              <i className="bi bi-exclamation-circle me-1"></i>
-              Debes completar todos los campos obligatorios para continuar
-            </small>
-          </div>
-        )}
       </form>
     </div>
   );

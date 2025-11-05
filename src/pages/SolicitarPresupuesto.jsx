@@ -1,5 +1,6 @@
 import React from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import { Button } from '../components/common';
 
 // Datos de ejemplo para simular la búsqueda
 const solicitud = { id: 1, titulo: 'Reparación de canilla en cocina' };
@@ -26,10 +27,9 @@ function SolicitarPresupuesto() {
           <p className="card-text">
             Estás a punto de enviar tu solicitud de <strong>"{solicitud.titulo}"</strong> para que sea presupuestada.
           </p>
-          <button onClick={handleConfirmar} className="btn btn-primary me-2">Confirmar y Enviar</button>
-          <Link to={`/solicitud/${solicitudId}/recomendaciones`} className="btn btn-secondary">Cancelar</Link>
+          <Button onClick={handleConfirmar} variant="primary" className="me-2">Confirmar y Enviar</Button>
+          <Button as={Link} to={`/solicitud/${solicitudId}/recomendaciones`} variant="secondary">Cancelar</Button>
         </div>
-        {/* Footer intencionalmente eliminado en demo para evitar referencias a notificaciones */}
       </div>
     </div>
   );

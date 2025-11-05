@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import './SolicitudDetalle.css';
+import { Button } from '../components/common';
+import '../styles/pages/SolicitudDetalle.css';
 
-// --- Mock Data ---
+// Datos de prueba
 const solicitudesFalsas = [
   { id: 1, titulo: 'Reparación de canilla en cocina', categoria: 'Plomería', localidad: 'Baradero', estado: 'Iniciada', fechaCreacion: '15/01/2025', descripcion: 'Se necesita reparar una canilla que pierde agua constantemente.', imagenes: [] },
   { id: 2, titulo: 'Instalación de ventilador de techo', categoria: 'Electricidad', localidad: 'San Pedro', estado: 'Enviada', fechaCreacion: '14/01/2025', descripcion: 'Necesito instalar un ventilador de techo en el dormitorio principal.', imagenes: [] },
@@ -71,7 +72,6 @@ const presupuestosPorSolicitud = {
     },
   ],
 };
-// ------------------------------------
 
 function SolicitudDetalle() {
   const { id } = useParams();
@@ -97,9 +97,9 @@ function SolicitudDetalle() {
         <div className="alert alert-warning">
           <h3>Solicitud no encontrada</h3>
           <p>La solicitud que buscas no existe o fue eliminada.</p>
-          <button className="btn btn-primary mt-3" onClick={() => navigate('/panel-solicitante')}>
+          <Button variant="primary" className="mt-3" onClick={() => navigate('/panel-solicitante')}>
             Volver al Panel
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -129,7 +129,7 @@ function SolicitudDetalle() {
   };
 
   const handleSolicitarPresupuesto = (prestador) => {
-    alert(`✅ Solicitud de presupuesto enviada a ${prestador.nombrePublico}`);
+    alert(`Solicitud de presupuesto enviada a ${prestador.nombrePublico}`);
     setTimeout(() => navigate('/panel-solicitante'), 1500);
   };
 
@@ -139,7 +139,6 @@ function SolicitudDetalle() {
   };
 
   const handleAceptarPresupuesto = () => {
-    // Simular aceptación del presupuesto agregando datos de contacto
     const presupuestoConContacto = {
       ...presupuestoSeleccionado,
       estado: 'Aceptado',
@@ -152,11 +151,11 @@ function SolicitudDetalle() {
     
     setPresupuestoSeleccionado(presupuestoConContacto);
     setPresupuestoAceptado(true);
-    alert('✅ Presupuesto aceptado. Se muestran los datos de contacto del prestador.');
+    alert('Presupuesto aceptado. Se muestran los datos de contacto del prestador.');
   };
 
   const handleRechazarPresupuesto = () => {
-    alert('❌ Presupuesto rechazado.');
+    alert('Presupuesto rechazado.');
     setMostrarModalPresupuesto(false);
   };
 
@@ -170,7 +169,7 @@ function SolicitudDetalle() {
       return;
     }
     
-    alert(`✅ Calificación enviada: ${calificacion} estrellas. ¡Gracias por tu feedback!`);
+    alert(`Calificación enviada: ${calificacion} estrellas. ¡Gracias por tu feedback!`);
     setMostrarModalCalificacion(false);
     setCalificacion(0);
     setComentarioCalificacion('');
@@ -199,9 +198,9 @@ function SolicitudDetalle() {
 
   return (
     <div className="solicitud-detalle-container">
-      <button className="btn btn-outline-secondary mb-4" onClick={() => navigate('/panel-solicitante')}>
+      <Button variant="outline-secondary" className="mb-4" onClick={() => navigate('/panel-solicitante')}>
         ← Volver a Mis Solicitudes
-      </button>
+      </Button>
 
       {/* --- Detalle de la solicitud --- */}
       <div className="card solicitud-card mb-4">
@@ -234,7 +233,7 @@ function SolicitudDetalle() {
         </div>
       </div>
 
-      {/* --- Recomendaciones (Solo estado Iniciada) --- */}
+      {/* Recomendaciones (Solo estado Iniciada) */}
       {esIniciada && (
         <div className="recomendaciones-section">
           <div className="section-header mb-4">
@@ -257,12 +256,12 @@ function SolicitudDetalle() {
                         </small>
                         <div className="info-box mb-3">{p.experiencia}</div>
                         <div className="d-grid gap-2">
-                          <button className="btn btn-outline-primary" onClick={() => navigate(`/perfil/${p.id}`)}>
+                          <Button variant="outline-primary" onClick={() => navigate(`/perfil/${p.id}`)}>
                             Ver Perfil
-                          </button>
-                          <button className="btn btn-success" onClick={() => handleSolicitarPresupuesto(p)}>
+                          </Button>
+                          <Button variant="success" onClick={() => handleSolicitarPresupuesto(p)}>
                             Solicitar Presupuesto
-                          </button>
+                          </Button>
                         </div>
                       </div>
                     </div>
@@ -273,9 +272,9 @@ function SolicitudDetalle() {
               {/* Ver más (solo en estado Iniciada cuando no se buscan cercanos) */}
               {!buscarCercanos && prestadoresRecomendados.length > 3 && (
                 <div className="text-center mt-4">
-                  <button className="btn btn-outline-secondary btn-lg" onClick={() => setMostrarTodos(!mostrarTodos)}>
-                    {mostrarTodos ? 'Mostrar menos' : `Ver más (${prestadoresRecomendados.length - 3})`}
-                  </button>
+                  <Button variant="outline-secondary" size="large" onClick={() => setMostrarTodos(!mostrarTodos)}>
+                    {mostrarTodos ? 'Ver menos' : `Ver todos (${prestadoresRecomendados.length})`}
+                  </Button>
                 </div>
               )}
             </>
@@ -283,13 +282,13 @@ function SolicitudDetalle() {
             <div className="alert alert-warning text-center">
               <h5>No se encontraron prestadores de {solicitud.categoria} en {solicitud.localidad}</h5>
               {prestadoresEnZonasCercanas.length > 0 && !buscarCercanos ? (
-                <button className="btn btn-primary mt-3" onClick={() => setBuscarCercanos(true)}>
+                <Button variant="primary" className="mt-3" onClick={() => setBuscarCercanos(true)}>
                   Buscar en localidades cercanas ({prestadoresEnZonasCercanas.length})
-                </button>
+                </Button>
               ) : buscarCercanos ? (
-                <button className="btn btn-outline-secondary mt-3" onClick={() => setBuscarCercanos(false)}>
+                <Button variant="outline-secondary" className="mt-3" onClick={() => setBuscarCercanos(false)}>
                   Volver a búsqueda original
-                </button>
+                </Button>
               ) : (
                 <p className="text-muted mt-2">Tampoco hay prestadores cercanos disponibles.</p>
               )}
@@ -298,7 +297,7 @@ function SolicitudDetalle() {
         </div>
       )}
 
-      {/* --- Prestadores Enviados (Solo estado Enviada) --- */}
+      {/* Prestadores Enviados (Solo estado Enviada) */}
       {esEnviada && (
         <div className="prestadores-enviados-section">
           <div className="section-header mb-4">
@@ -343,7 +342,7 @@ function SolicitudDetalle() {
         </div>
       )}
 
-      {/* --- Presupuestos recibidos (Estados Cotizada, pero NO Pendiente de Calificación) --- */}
+      {/* Presupuestos recibidos (estados cotizada, pero no pendiente de calificación) */}
       {(esCotizada || (presupuestosRecibidos.length > 0 && !esPendienteCalificacion)) && (
         <div className="presupuestos-section">
           <div className="section-header mb-4">
@@ -376,12 +375,12 @@ function SolicitudDetalle() {
 
                     {esCotizada && p.estado === 'Pendiente' && (
                       <div className="d-grid gap-2">
-                        <button className="btn btn-success" onClick={() => handleVerPresupuesto(p)}>
-                          <i className="bi bi-check-circle me-2"></i>Aceptar Presupuesto
-                        </button>
-                        <button className="btn btn-outline-danger" onClick={() => handleRechazarPresupuesto()}>
-                          <i className="bi bi-x-circle me-2"></i>Rechazar
-                        </button>
+                        <Button variant="success" onClick={() => handleVerPresupuesto(p)} icon="check-circle">
+                          Aceptar Presupuesto
+                        </Button>
+                        <Button variant="outline-danger" onClick={() => handleRechazarPresupuesto()} icon="x-circle">
+                          Rechazar
+                        </Button>
                       </div>
                     )}
 
@@ -403,7 +402,7 @@ function SolicitudDetalle() {
         </div>
       )}
 
-      {/* --- Aviso para calificación (Estado Pendiente de Calificación) --- */}
+      {/* Aviso para calificación (estado pendiente de calificación) */}
       {esPendienteCalificacion && (
         <div className="calificacion-pendiente-section">
           {/* Primero: Información del prestador */}
@@ -453,14 +452,14 @@ function SolicitudDetalle() {
             <p className="mb-3">
               Tu opinión es muy importante. Ayuda a otros usuarios calificando el trabajo realizado.
             </p>
-            <button className="btn btn-warning btn-lg" onClick={handleMostrarModalCalificacion}>
-              <i className="bi bi-star-fill me-2"></i>Calificar Prestador
-            </button>
+            <Button variant="warning" size="large" onClick={handleMostrarModalCalificacion} icon="star-fill">
+              Calificar Prestador
+            </Button>
           </div>
         </div>
       )}
 
-      {/* --- Solicitud Cerrada --- */}
+      {/* Solicitud Cerrada */}
       {esCerrada && (
         <div className="solicitud-cerrada-section">
           <div className="alert alert-success text-center">
@@ -541,21 +540,21 @@ function SolicitudDetalle() {
                 <div className="modal-footer">
                   {!presupuestoAceptado ? (
                     <>
-                      <button className="btn btn-secondary" onClick={() => setMostrarModalPresupuesto(false)}>
+                      <Button variant="secondary" onClick={() => setMostrarModalPresupuesto(false)}>
                         Cancelar
-                      </button>
-                      <button className="btn btn-success" onClick={handleAceptarPresupuesto}>
-                        <i className="bi bi-check-circle me-2"></i>Aceptar Presupuesto
-                      </button>
+                      </Button>
+                      <Button variant="success" onClick={handleAceptarPresupuesto} icon="check-circle">
+                        Aceptar Presupuesto
+                      </Button>
                     </>
                   ) : (
-                    <button className="btn btn-primary" onClick={() => {
+                    <Button variant="primary" onClick={() => {
                       setMostrarModalPresupuesto(false);
                       setPresupuestoAceptado(false);
                       setTimeout(() => navigate('/panel-solicitante'), 1000);
-                    }}>
-                      <i className="bi bi-door-closed me-2"></i>Cerrar
-                    </button>
+                    }} icon="door-closed">
+                      Cerrar
+                    </Button>
                   )}
                 </div>
               </div>
@@ -614,12 +613,12 @@ function SolicitudDetalle() {
                   </div>
                 </div>
                 <div className="modal-footer">
-                  <button className="btn btn-secondary" onClick={() => setMostrarModalCalificacion(false)}>
+                  <Button variant="secondary" onClick={() => setMostrarModalCalificacion(false)}>
                     Cancelar
-                  </button>
-                  <button className="btn btn-warning" onClick={handleEnviarCalificacion}>
-                    <i className="bi bi-star-fill me-2"></i>Enviar Calificación
-                  </button>
+                  </Button>
+                  <Button variant="warning" onClick={handleEnviarCalificacion} icon="star-fill">
+                    Enviar Calificación
+                  </Button>
                 </div>
               </div>
             </div>
