@@ -1,0 +1,61 @@
+/* ===== IMPORTACIONES GLOBALES DE ESTILOS ===== */
+
+/* Estilos globales */
+@import './global/index.css';
+@import './global/App.css';
+
+/* Componentes */
+@import './components/Navbar.css';
+@import './components/Footer.css';
+@import './components/Modal.css';
+@import './components/Card.css';
+@import './components/Button.css';
+@import './components/AdminDashboard.css';
+@import './components/AdminReportes.css';
+
+/* Páginas */
+@import './pages/Auth.css';
+@import './pages/Home.css';
+@import './pages/EditarPerfilPrestador.css';
+@import './pages/PanelAdmin.css';
+@import './pages/PanelPrestador.css';
+@import './pages/PanelSolicitante.css';
+@import './pages/PerfilPrestador.css';
+@import './pages/SolicitudDetalle.css';
+@import './pages/LegalPages.css';
+
+/* ===== VARIABLES CSS GLOBALES ===== */
+:root {
+  --color-primary: #1b8a5e;
+  --color-primary-dark: #17734f;
+  --color-primary-light: #2dd4a5;
+  --color-secondary: #222831;
+  --color-accent: #ffc107;
+  
+  --color-success: #28a745;
+  --color-danger: #dc3545;
+  --color-warning: #ffc107;
+  --color-info: #17a2b8;
+  
+  --color-gray-100: #f8f9fa;
+  --color-gray-200: #e9ecef;
+  --color-gray-300: #dee2e6;
+  --color-gray-400: #ced4da;
+  --color-gray-500: #6c757d;
+  --color-gray-600: #495057;
+  --color-gray-700: #393e46;
+  --color-gray-800: #222831;
+  
+  --border-radius: 10px;
+  --border-radius-lg: 15px;
+  --border-radius-xl: 20px;
+  --border-radius-pill: 25px;
+  
+  --shadow-sm: 0 4px 15px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 5px 20px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 8px 25px rgba(0, 0, 0, 0.12);
+  --shadow-xl: 0 10px 40px rgba(0, 0, 0, 0.2);
+  
+  --transition: all 0.3s ease;
+  --transition-fast: all 0.2s ease;
+}

@@ -1,0 +1,103 @@
+/* Componente Card personalizado */
+.card-custom {
+  background: #ffffff;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.card-custom--shadow {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.card-custom--shadow:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+.card-custom--bordered {
+  border: 1px solid #e9ecef;
+}
+
+/* Header */
+.card-custom__header {
+  padding: 20px 24px 0 24px;
+  border-bottom: 1px solid #f8f9fa;
+  background-color: #fdfdfd;
+}
+
+.card-custom__title {
+  margin: 0 0 8px 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #212529;
+  line-height: 1.4;
+}
+
+.card-custom__subtitle {
+  margin: 0 0 16px 0;
+  font-size: 0.875rem;
+  color: #6c757d;
+  line-height: 1.5;
+}
+
+/* Body */
+.card-custom__body {
+  padding: 24px;
+  flex: 1;
+}
+
+/* Footer */
+.card-custom__footer {
+  padding: 16px 24px 20px 24px;
+  border-top: 1px solid #f8f9fa;
+  background-color: #fdfdfd;
+}
+
+/* Variantes especiales */
+.card-custom--compact .card-custom__header {
+  padding: 16px 20px 0 20px;
+}
+
+.card-custom--compact .card-custom__body {
+  padding: 20px;
+}
+
+.card-custom--compact .card-custom__footer {
+  padding: 12px 20px 16px 20px;
+}
+
+/* Estados especiales */
+.card-custom--interactive {
+  cursor: pointer;
+}
+
+.card-custom--interactive:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.card-custom--loading {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+/* Responsive */
+@media (max-width: 576px) {
+  .card-custom__header {
+    padding: 16px 20px 0 20px;
+  }
+  
+  .card-custom__body {
+    padding: 20px;
+  }
+  
+  .card-custom__footer {
+    padding: 12px 20px 16px 20px;
+  }
+  
+  .card-custom__title {
+    font-size: 1.125rem;
+  }
+}

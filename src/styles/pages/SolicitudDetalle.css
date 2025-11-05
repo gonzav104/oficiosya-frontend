@@ -1,0 +1,376 @@
+/* ===== SOLICITUD DETALLE ===== */
+.solicitud-detalle-container {
+  padding: 20px 0;
+}
+
+/* ===== CARD PRINCIPAL ===== */
+.solicitud-card {
+  border-radius: 15px;
+  border: none;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.solicitud-card .card-header {
+  background: linear-gradient(135deg, #1b8a5e 0%, #17734f 100%);
+  color: white;
+  padding: 2rem;
+  border: none;
+}
+
+.solicitud-card h3 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 0;
+}
+
+.solicitud-meta .badge {
+  font-size: 0.85rem;
+  padding: 0.5em 0.9em;
+  font-weight: 600;
+}
+
+.badge-estado {
+  font-size: 1rem;
+  padding: 0.6em 1.2em;
+  border-radius: 25px;
+  font-weight: 700;
+}
+
+.descripcion-texto {
+  font-size: 1.1rem;
+  line-height: 1.8;
+  color: #495057;
+}
+
+/* ===== SECCIÓN RECOMENDACIONES ===== */
+.recomendaciones-section {
+  margin-top: 3rem;
+}
+
+.section-header {
+  padding-bottom: 1rem;
+  border-bottom: 3px solid #1b8a5e;
+}
+
+.section-header h4 {
+  color: #222831;
+  font-weight: 800;
+  font-size: 1.5rem;
+}
+
+/* ===== TARJETAS DE PRESTADOR ===== */
+.prestador-card {
+  border: 2px solid #e9ecef;
+  border-radius: 15px;
+  transition: all 0.3s ease;
+  overflow: hidden;
+  background-color: #fff;
+}
+
+.prestador-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 12px 30px rgba(27, 138, 94, 0.2);
+  border-color: #1b8a5e;
+}
+
+.prestador-avatar {
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, #1b8a5e, #2dd4a5);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  margin: 0 auto;
+  box-shadow: 0 5px 15px rgba(27, 138, 94, 0.3);
+}
+
+.prestador-avatar-modal {
+  width: 100px;
+  height: 100px;
+  background: linear-gradient(135deg, #1b8a5e, #2dd4a5);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3rem;
+  margin: 0 auto;
+  box-shadow: 0 5px 15px rgba(27, 138, 94, 0.3);
+}
+
+.prestador-card .card-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #222831;
+}
+
+/* ===== CALIFICACIÓN ===== */
+.calificacion-box {
+  text-align: center;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 10px;
+}
+
+.estrellas {
+  font-size: 1.2rem;
+}
+
+.estrellas i {
+  margin: 0 2px;
+}
+
+/* ===== INFO BOX ===== */
+.info-box {
+  padding: 0.75rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border-left: 4px solid #1b8a5e;
+  font-size: 0.9rem;
+}
+
+/* ===== PRESTADORES ENVIADOS ===== */
+.prestadores-enviados-section {
+  margin-top: 3rem;
+}
+
+.prestador-avatar-sm {
+  width: 50px;
+  height: 50px;
+  background: linear-gradient(135deg, #1b8a5e, #2dd4a5);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  box-shadow: 0 3px 10px rgba(27, 138, 94, 0.3);
+}
+
+/* ===== CALIFICACIÓN PENDIENTE ===== */
+.calificacion-pendiente-section {
+  margin-top: 3rem;
+}
+
+.presupuesto-completado {
+  border: 2px solid #1b8a5e;
+  border-radius: 15px;
+  background: linear-gradient(135deg, #f8fff9 0%, #e6ffed 100%);
+}
+
+.presupuesto-completado .card-body {
+  padding: 2rem;
+}
+
+/* ===== CALIFICACIÓN CON ESTRELLAS ===== */
+.estrellas-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+}
+
+.estrella-calificacion {
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.estrella-calificacion:hover {
+  transform: scale(1.2);
+  filter: brightness(1.2);
+}
+
+.calificacion-pendiente-section .presupuesto-completado {
+  border: 2px solid #28a745;
+  background: linear-gradient(135deg, #f8fff9 0%, #e6ffed 100%);
+  box-shadow: 0 8px 25px rgba(40, 167, 69, 0.2);
+}
+
+.calificacion-pendiente-section .presupuesto-completado h4 {
+  color: #28a745;
+  font-weight: 700;
+}
+
+/* ===== SOLICITUD CERRADA ===== */
+.solicitud-cerrada-section {
+  margin-top: 3rem;
+}
+
+.trabajo-finalizado {
+  border: 2px solid #28a745;
+  border-radius: 15px;
+  background: linear-gradient(135deg, #f8fff9 0%, #e6ffed 100%);
+  box-shadow: 0 5px 15px rgba(40, 167, 69, 0.2);
+}
+
+.trabajo-finalizado .card-body {
+  padding: 2rem;
+}
+
+/* ===== MEJORAR ALERTAS EXISTENTES ===== */
+.presupuestos-section {
+  margin-top: 3rem;
+}
+
+.presupuesto-card {
+  border: 2px solid #e9ecef;
+  border-radius: 15px;
+  transition: all 0.3s ease;
+  background: #fff;
+}
+
+.presupuesto-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px rgba(27, 138, 94, 0.2);
+  border-color: #1b8a5e;
+}
+
+/* Resalta presupuestos aceptados */
+.presupuesto-aceptado {
+  border: 2px solid #1b8a5e !important;
+  box-shadow: 0 0 25px rgba(27, 138, 94, 0.3);
+  background: linear-gradient(135deg, #e6ffed 0%, #f8fff9 100%);
+}
+
+.contacto-box-aceptado {
+  background: #f0fff5;
+  border: 1px solid #b2e8cc;
+  border-left: 4px solid #1b8a5e;
+  padding: 1rem;
+  border-radius: 10px;
+  margin-top: 1rem;
+}
+
+.contacto-box-aceptado h6 {
+  color: #1b8a5e;
+  font-weight: 700;
+}
+
+/* ===== MODAL ===== */
+.modal-backdrop {
+  background-color: rgba(0, 0, 0, 0.6);
+}
+
+.modal-content {
+  border-radius: 15px;
+  border: none;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+  background: linear-gradient(135deg, #1b8a5e 0%, #17734f 100%);
+  color: white;
+  border-radius: 15px 15px 0 0;
+  padding: 1.5rem;
+}
+
+.modal-header .modal-title {
+  font-weight: 700;
+  font-size: 1.25rem;
+}
+
+.modal-header .btn-close {
+  filter: brightness(0) invert(1);
+}
+
+.modal-body {
+  padding: 2rem;
+}
+
+.modal-footer {
+  border-top: 1px solid #e9ecef;
+  padding: 1.5rem 2rem;
+}
+
+/* ===== BOTONES ===== */
+.btn {
+  border-radius: 10px;
+  padding: 0.7rem 1.5rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.btn-success {
+  background: linear-gradient(135deg, #1b8a5e 0%, #17734f 100%);
+  border: none;
+  color: #fff;
+}
+
+.btn-success:hover {
+  background: linear-gradient(135deg, #17734f 0%, #135c40 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(27, 138, 94, 0.4);
+}
+
+.btn-outline-primary {
+  border: 2px solid #1b8a5e;
+  color: #1b8a5e;
+}
+
+.btn-outline-primary:hover {
+  background-color: #1b8a5e;
+  color: white;
+}
+
+.btn-outline-secondary {
+  border: 2px solid #6c757d;
+  color: #6c757d;
+}
+
+.btn-outline-secondary:hover {
+  background-color: #6c757d;
+  color: white;
+}
+
+/* ===== ALERTAS ===== */
+.alert {
+  border-radius: 12px;
+  border: none;
+  transition: all 0.3s ease;
+}
+
+.alert-info {
+  background-color: #e7f3ff;
+  color: #004085;
+  border-left: 4px solid #0066cc;
+}
+
+.alert-warning {
+  background-color: #fff8e1;
+  color: #7c5d00;
+  border-left: 4px solid #ffc107;
+}
+
+.alert-success {
+  background-color: #e6ffed;
+  color: #0b6b3a;
+  border-left: 4px solid #1b8a5e;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .solicitud-card .card-header {
+    padding: 1.5rem;
+  }
+
+  .solicitud-card h3 {
+    font-size: 1.35rem;
+  }
+
+  .section-header h4 {
+    font-size: 1.25rem;
+  }
+
+  .prestador-card {
+    margin-bottom: 1.5rem;
+  }
+
+  .modal-dialog {
+    margin: 10px;
+  }
+
+  .modal-body {
+    padding: 1.5rem;
+  }
+}
