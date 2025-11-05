@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
-import './PanelAdmin.css';
+import AdminDashboard from '../components/AdminDashboard';
+import AdminReportes from '../components/AdminReportes';
+import { Button, ValidatedInput } from '../components/common';
+import '../styles/pages/PanelAdmin.css';
 
-// --- Datos de Ejemplo para Usuarios ---
+// Datos de Ejemplo para Usuarios
 const usuariosIniciales = [
   { 
     id: 1, 
@@ -102,7 +105,6 @@ const accionesAdministrativasIniciales = [
     descripcion: 'Usuario bloqueado por calificaciones bajas'
   }
 ];
-// ------------------------------------
 
 function PanelAdmin() {
   const [usuarios, setUsuarios] = useState(usuariosIniciales);
@@ -110,7 +112,7 @@ function PanelAdmin() {
   const [filtroRol, setFiltroRol] = useState('Todos');
   const [filtroEstado, setFiltroEstado] = useState('Todos');
   const [busqueda, setBusqueda] = useState('');
-  const [vistaActual, setVistaActual] = useState('usuarios');
+  const [vistaActual, setVistaActual] = useState('dashboard');
   
   // Modales
   const [showBlockModal, setShowBlockModal] = useState(false);
@@ -121,14 +123,14 @@ function PanelAdmin() {
   // Formulario de bloqueo
   const [motivoBloqueo, setMotivoBloqueo] = useState('');
 
-  // RF28: Bloquear usuario
+  // Bloquear usuario
   const handleBlockClick = (user) => {
     setUsuarioSeleccionado(user);
     setMotivoBloqueo('');
     setShowBlockModal(true);
   };
 
-  // RF30: Reactivar usuario
+  // Reactivar usuario
   const handleReactivateClick = (user) => {
     setUsuarioSeleccionado(user);
     setShowReactivateModal(true);
@@ -140,7 +142,7 @@ function PanelAdmin() {
     setShowDetalleModal(true);
   };
 
-  // Confirmar bloqueo - RF28
+  // Confirmar bloqueo
   const confirmBlock = () => {
     const ahora = new Date().toLocaleString('es-AR', {
       day: '2-digit',
@@ -172,13 +174,13 @@ function PanelAdmin() {
     };
     setAccionesAdmin([nuevaAccion, ...accionesAdmin]);
 
-    alert(`✅ Usuario bloqueado exitosamente\n\n${usuarioSeleccionado.nombre} ya no podrá acceder a la plataforma.`);
+    alert(`Usuario bloqueado exitosamente\n\n${usuarioSeleccionado.nombre} ya no podrá acceder a la plataforma.`);
     
     setShowBlockModal(false);
     setMotivoBloqueo('');
   };
 
-  // Confirmar reactivación - RF30
+  // Confirmar reactivación
   const confirmReactivate = () => {
     const ahora = new Date().toLocaleString('es-AR', {
       day: '2-digit',
@@ -210,7 +212,7 @@ function PanelAdmin() {
     };
     setAccionesAdmin([nuevaAccion, ...accionesAdmin]);
 
-    alert(`✅ Usuario reactivado exitosamente\n\n${usuarioSeleccionado.nombre} puede acceder nuevamente a la plataforma.`);
+    alert(`Usuario reactivado exitosamente\n\n${usuarioSeleccionado.nombre} puede acceder nuevamente a la plataforma.`);
     
     setShowReactivateModal(false);
   };
@@ -272,6 +274,13 @@ function PanelAdmin() {
         </div>
         <div className="header-actions">
           <button 
+            className={`btn ${vistaActual === 'dashboard' ? 'btn-primary' : 'btn-outline-secondary'}`}
+            onClick={() => setVistaActual('dashboard')}
+          >
+            <i className="bi bi-graph-up me-2"></i>
+            Dashboard
+          </button>
+          <button 
             className={`btn ${vistaActual === 'usuarios' ? 'btn-primary' : 'btn-outline-secondary'}`}
             onClick={() => setVistaActual('usuarios')}
           >
@@ -284,6 +293,13 @@ function PanelAdmin() {
           >
             <i className="bi bi-clock-history me-2"></i>
             Historial
+          </button>
+          <button 
+            className={`btn ${vistaActual === 'reportes' ? 'btn-primary' : 'btn-outline-secondary'}`}
+            onClick={() => setVistaActual('reportes')}
+          >
+            <i className="bi bi-flag me-2"></i>
+            Reportes
           </button>
         </div>
       </div>
@@ -337,6 +353,11 @@ function PanelAdmin() {
         </div>
       </div>
 
+      {/* VISTA DASHBOARD */}
+      {vistaActual === 'dashboard' && (
+        <AdminDashboard />
+      )}
+
       {/* VISTA DE USUARIOS */}
       {vistaActual === 'usuarios' && (
         <div className="card main-card">
@@ -349,16 +370,15 @@ function PanelAdmin() {
             {/* FILTROS Y BÚSQUEDA */}
             <div className="filtros-container">
               {/* Búsqueda */}
-              <div className="busqueda-box">
-                <i className="bi bi-search"></i>
-                <input 
-                  type="text" 
-                  className="form-control"
-                  placeholder="Buscar por nombre, email o localidad..."
-                  value={busqueda}
-                  onChange={(e) => setBusqueda(e.target.value)}
-                />
-              </div>
+              <ValidatedInput
+                type="text"
+                name="busqueda"
+                placeholder="Buscar por nombre, email o localidad..."
+                value={busqueda}
+                onChange={(e) => setBusqueda(e.target.value)}
+                icon={{ name: "search", position: "left" }}
+                className="mb-3"
+              />
 
               {/* Filtros */}
               <div className="filtros-buttons">
@@ -501,29 +521,32 @@ function PanelAdmin() {
 
                     {/* Acciones */}
                     <div className="usuario-acciones">
-                      <button 
-                        className="btn btn-outline-secondary btn-sm"
+                      <Button 
+                        variant="outline-secondary" 
+                        size="small"
                         onClick={() => verDetalles(user)}
+                        icon="eye"
                       >
-                        <i className="bi bi-eye"></i>
                         Ver Detalles
-                      </button>
+                      </Button>
                       {user.estado === 'Activo' ? (
-                        <button 
-                          className="btn btn-danger btn-sm"
+                        <Button 
+                          variant="danger" 
+                          size="small"
                           onClick={() => handleBlockClick(user)}
+                          icon="lock"
                         >
-                          <i className="bi bi-lock"></i>
                           Bloquear
-                        </button>
+                        </Button>
                       ) : (
-                        <button 
-                          className="btn btn-success btn-sm"
+                        <Button 
+                          variant="success" 
+                          size="small"
                           onClick={() => handleReactivateClick(user)}
+                          icon="unlock"
                         >
-                          <i className="bi bi-unlock"></i>
                           Reactivar
-                        </button>
+                        </Button>
                       )}
                     </div>
                   </div>
@@ -540,7 +563,7 @@ function PanelAdmin() {
         </div>
       )}
 
-      {/* VISTA DE HISTORIAL - RNF8 */}
+      {/* VISTA DE HISTORIAL */}
       {vistaActual === 'historial' && (
         <div className="card main-card">
           <div className="card-header">
@@ -588,7 +611,12 @@ function PanelAdmin() {
         </div>
       )}
 
-      {/* MODAL BLOQUEAR USUARIO - RF28 */}
+      {/* VISTA DE REPORTES */}
+      {vistaActual === 'reportes' && (
+        <AdminReportes />
+      )}
+
+      {/* MODAL BLOQUEAR USUARIO - */}
       {showBlockModal && usuarioSeleccionado && (
         <>
           <div className="modal-backdrop show"></div>
@@ -618,18 +646,15 @@ function PanelAdmin() {
                     <strong>Rol:</strong> {usuarioSeleccionado.rol}
                   </div>
 
-                  <div className="mb-3">
-                    <label className="form-label">
-                      Motivo del bloqueo <span className="text-muted">(opcional)</span>
-                    </label>
-                    <textarea 
-                      className="form-control"
-                      rows="3"
-                      value={motivoBloqueo}
-                      onChange={(e) => setMotivoBloqueo(e.target.value)}
-                      placeholder="Describe el motivo del bloqueo..."
-                    ></textarea>
-                  </div>
+                  <ValidatedInput
+                    as="textarea"
+                    name="motivoBloqueo"
+                    label="Motivo del bloqueo (opcional)"
+                    rows={3}
+                    value={motivoBloqueo}
+                    onChange={(e) => setMotivoBloqueo(e.target.value)}
+                    placeholder="Describe el motivo del bloqueo..."
+                  />
 
                   <div className="alert alert-danger mb-0">
                     <small>
@@ -639,21 +664,19 @@ function PanelAdmin() {
                   </div>
                 </div>
                 <div className="modal-footer">
-                  <button 
-                    type="button" 
-                    className="btn btn-secondary"
+                  <Button 
+                    variant="secondary"
                     onClick={() => setShowBlockModal(false)}
                   >
                     Cancelar
-                  </button>
-                  <button 
-                    type="button" 
-                    className="btn btn-danger"
+                  </Button>
+                  <Button 
+                    variant="danger"
                     onClick={confirmBlock}
+                    icon="lock"
                   >
-                    <i className="bi bi-lock me-2"></i>
                     Confirmar Bloqueo
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>
@@ -661,7 +684,7 @@ function PanelAdmin() {
         </>
       )}
 
-      {/* MODAL REACTIVAR USUARIO - RF30 */}
+      {/* MODAL REACTIVAR USUARIO */}
       {showReactivateModal && usuarioSeleccionado && (
         <>
           <div className="modal-backdrop show"></div>
@@ -706,21 +729,19 @@ function PanelAdmin() {
                   </div>
                 </div>
                 <div className="modal-footer">
-                  <button 
-                    type="button" 
-                    className="btn btn-secondary"
+                  <Button 
+                    variant="secondary"
                     onClick={() => setShowReactivateModal(false)}
                   >
                     Cancelar
-                  </button>
-                  <button 
-                    type="button" 
-                    className="btn btn-success"
+                  </Button>
+                  <Button 
+                    variant="success"
                     onClick={confirmReactivate}
+                    icon="unlock"
                   >
-                    <i className="bi bi-unlock me-2"></i>
                     Confirmar Reactivación
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>
@@ -791,13 +812,12 @@ function PanelAdmin() {
                   )}
                 </div>
                 <div className="modal-footer">
-                  <button 
-                    type="button" 
-                    className="btn btn-secondary"
+                  <Button 
+                    variant="secondary"
                     onClick={() => setShowDetalleModal(false)}
                   >
                     Cerrar
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>

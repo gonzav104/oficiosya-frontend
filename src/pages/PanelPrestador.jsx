@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import './PanelPrestador.css';
+import { Button, ValidatedInput } from '../components/common';
+import '../styles/pages/PanelPrestador.css';
 
-// --- Datos de Ejemplo - Mock Data ---
+// Datos de Ejemplo
 const solicitudesRecibidas = [
   { 
     id: 10, 
@@ -74,17 +75,17 @@ function PanelPrestador() {
   const [mostrarDetalles, setMostrarDetalles] = useState(false);
   const [errores, setErrores] = useState({});
 
-  // RF16: Formulario de presupuesto
+  // Formulario de presupuesto
   const [formPresupuesto, setFormPresupuesto] = useState({
     monto: '',
     plazo: '',
     mensaje: ''
   });
 
-  // RF17: Formulario de rechazo
+  // Formulario de rechazo
   const [mensajeRechazo, setMensajeRechazo] = useState('');
 
-  // Filtrar solicitudes según RF18
+  // Filtrar solicitudes según estado
   const solicitudesFiltradas = solicitudesRecibidas.filter(s => {
     if (filtro === 'Todos') return true;
     return s.estado === filtro;
@@ -122,18 +123,16 @@ function PanelPrestador() {
     setMostrarDetalles(true);
   };
 
-  // Validar presupuesto - RF16
+  // Validar presupuesto
   const validarPresupuesto = () => {
     const nuevosErrores = {};
 
-    // Monto: obligatorio, numérico, mayor a 0
     if (!formPresupuesto.monto) {
       nuevosErrores.monto = 'El monto es obligatorio';
     } else if (isNaN(formPresupuesto.monto) || parseFloat(formPresupuesto.monto) <= 0) {
       nuevosErrores.monto = 'Ingrese un monto numérico mayor a 0';
     }
 
-    // Plazo: obligatorio, numérico
     if (!formPresupuesto.plazo) {
       nuevosErrores.plazo = 'El plazo es obligatorio';
     } else if (isNaN(formPresupuesto.plazo) || parseInt(formPresupuesto.plazo) <= 0) {
@@ -144,7 +143,7 @@ function PanelPrestador() {
     return Object.keys(nuevosErrores).length === 0;
   };
 
-  // Enviar presupuesto - RF16
+  // Enviar presupuesto
   const enviarPresupuesto = () => {
     if (validarPresupuesto()) {
       console.log('Presupuesto enviado:', {
@@ -152,7 +151,7 @@ function PanelPrestador() {
         ...formPresupuesto
       });
 
-      alert(`✅ Presupuesto enviado exitosamente a ${solicitudSeleccionada.cliente}\n\nMonto: ${formPresupuesto.monto}\nPlazo: ${formPresupuesto.plazo} días\n\nLa solicitud cambió al estado "Cotizada" y el cliente será notificado.`);
+      alert(`Presupuesto enviado exitosamente a ${solicitudSeleccionada.cliente}\n\nMonto: ${formPresupuesto.monto}\nPlazo: ${formPresupuesto.plazo} días\n\nLa solicitud cambió al estado "Cotizada" y el cliente será notificado.`);
 
       setMostrarModalPresupuesto(false);
       setSolicitudSeleccionada(null);
@@ -160,14 +159,14 @@ function PanelPrestador() {
     }
   };
 
-  // Rechazar solicitud - RF17
+  // Rechazar solicitud
   const rechazarSolicitud = () => {
     console.log('Solicitud rechazada:', {
       solicitud: solicitudSeleccionada.id,
       motivo: mensajeRechazo
     });
 
-    alert(`❌ Solicitud rechazada\n\nSe notificó al cliente: ${solicitudSeleccionada.cliente}`);
+    alert(`Solicitud rechazada\n\nSe notificó al cliente: ${solicitudSeleccionada.cliente}`);
 
     setMostrarModalRechazo(false);
     setSolicitudSeleccionada(null);
@@ -185,10 +184,14 @@ function PanelPrestador() {
           </h2>
           <p className="text-muted mb-0">Gestiona las solicitudes de presupuesto que recibes</p>
         </div>
-        <Link to="/editar-perfil" className="btn btn-outline-primary">
-          <i className="bi bi-pencil-square me-2"></i>
+        <Button 
+          as={Link} 
+          to="/editar-perfil" 
+          variant="outline-primary"
+          icon="pencil-square"
+        >
           Editar Perfil
-        </Link>
+        </Button>
       </div>
 
       {/* ESTADÍSTICAS RÁPIDAS */}
@@ -327,30 +330,30 @@ function PanelPrestador() {
 
                 {/* RENDERIZADO SEGÚN ESTADO */}
                 <div className="solicitud-acciones mt-3">
-                  {/* PENDIENTE - RF16, RF17 */}
+                  {/* PENDIENTE */}
                   {solicitud.estado === 'Pendiente' && (
                     <div className="d-flex gap-2 flex-wrap">
-                      <button 
-                        className="btn btn-success"
+                      <Button 
+                        variant="success"
                         onClick={() => abrirModalPresupuesto(solicitud)}
+                        icon="envelope-check"
                       >
-                        <i className="bi bi-envelope-check me-2"></i>
                         Enviar Presupuesto
-                      </button>
-                      <button 
-                        className="btn btn-danger"
+                      </Button>
+                      <Button 
+                        variant="danger"
                         onClick={() => abrirModalRechazo(solicitud)}
+                        icon="x-circle"
                       >
-                        <i className="bi bi-x-circle me-2"></i>
                         Rechazar
-                      </button>
-                      <button 
-                        className="btn btn-outline-secondary"
+                      </Button>
+                      <Button 
+                        variant="outline-secondary"
                         onClick={() => verDetalles(solicitud)}
+                        icon="eye"
                       >
-                        <i className="bi bi-eye me-2"></i>
                         Ver Detalles
-                      </button>
+                      </Button>
                     </div>
                   )}
 
@@ -376,13 +379,14 @@ function PanelPrestador() {
                           )}
                         </div>
                       </div>
-                      <button 
-                        className="btn btn-outline-secondary btn-sm"
+                      <Button 
+                        variant="outline-secondary" 
+                        size="small"
                         onClick={() => verDetalles(solicitud)}
+                        icon="eye"
                       >
-                        <i className="bi bi-eye me-2"></i>
                         Ver Detalles
-                      </button>
+                      </Button>
                     </div>
                   )}
 
@@ -407,13 +411,14 @@ function PanelPrestador() {
                         <strong>Próximos pasos:</strong> El cliente tiene acceso a tus datos de contacto y se comunicará contigo para coordinar el trabajo.
                       </div>
 
-                      <button 
-                        className="btn btn-outline-secondary btn-sm"
+                      <Button 
+                        variant="outline-secondary" 
+                        size="small"
                         onClick={() => verDetalles(solicitud)}
+                        icon="eye"
                       >
-                        <i className="bi bi-eye me-2"></i>
                         Ver Detalles
-                      </button>
+                      </Button>
                     </div>
                   )}
 
@@ -447,7 +452,7 @@ function PanelPrestador() {
         )}
       </div>
 
-      {/* MODAL ENVIAR PRESUPUESTO - RF16 */}
+      {/* MODAL ENVIAR PRESUPUESTO */}
       {mostrarModalPresupuesto && solicitudSeleccionada && (
         <>
           <div className="modal-backdrop show"></div>
@@ -475,43 +480,30 @@ function PanelPrestador() {
 
                   <hr />
 
-                  <div className="mb-3">
-                    <label className="form-label">
-                      Monto <span className="text-danger">*</span>
-                    </label>
-                    <div className="input-group">
-                      <span className="input-group-text">$</span>
-                      <input 
-                        type="number" 
-                        className={`form-control ${errores.monto ? 'is-invalid' : ''}`}
-                        value={formPresupuesto.monto}
-                        onChange={(e) => setFormPresupuesto({...formPresupuesto, monto: e.target.value})}
-                        placeholder="Ej: 15000"
-                      />
-                    </div>
-                    {errores.monto && (
-                      <div className="text-danger small mt-1">{errores.monto}</div>
-                    )}
-                  </div>
+                  <ValidatedInput
+                    type="number"
+                    name="monto"
+                    label="Monto"
+                    value={formPresupuesto.monto}
+                    onChange={(e) => setFormPresupuesto({...formPresupuesto, monto: e.target.value})}
+                    error={errores.monto}
+                    placeholder="Ej: 15000"
+                    required
+                    icon={{ name: "currency-dollar", position: "left" }}
+                  />
 
-                  <div className="mb-3">
-                    <label className="form-label">
-                      Plazo de realización <span className="text-danger">*</span>
-                    </label>
-                    <div className="input-group">
-                      <input 
-                        type="number" 
-                        className={`form-control ${errores.plazo ? 'is-invalid' : ''}`}
-                        value={formPresupuesto.plazo}
-                        onChange={(e) => setFormPresupuesto({...formPresupuesto, plazo: e.target.value})}
-                        placeholder="Ej: 3"
-                      />
-                      <span className="input-group-text">días</span>
-                    </div>
-                    {errores.plazo && (
-                      <div className="text-danger small mt-1">{errores.plazo}</div>
-                    )}
-                  </div>
+                  <ValidatedInput
+                    type="number"
+                    name="plazo"
+                    label="Plazo de entrega"
+                    value={formPresupuesto.plazo}
+                    onChange={(e) => setFormPresupuesto({...formPresupuesto, plazo: e.target.value})}
+                    error={errores.plazo}
+                    placeholder="Ej: 3"
+                    required
+                    icon={{ name: "calendar-event", position: "right" }}
+                    helpText="días"
+                  />
 
                   <div className="mb-3">
                     <label className="form-label">
@@ -534,21 +526,19 @@ function PanelPrestador() {
                   </div>
                 </div>
                 <div className="modal-footer">
-                  <button 
-                    type="button" 
-                    className="btn btn-secondary"
+                  <Button 
+                    variant="secondary"
                     onClick={() => setMostrarModalPresupuesto(false)}
                   >
                     Cancelar
-                  </button>
-                  <button 
-                    type="button" 
-                    className="btn btn-success"
+                  </Button>
+                  <Button 
+                    variant="success"
                     onClick={enviarPresupuesto}
+                    icon="send"
                   >
-                    <i className="bi bi-send me-2"></i>
                     Enviar Presupuesto
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>
@@ -556,7 +546,7 @@ function PanelPrestador() {
         </>
       )}
 
-      {/* MODAL RECHAZAR SOLICITUD - RF17 */}
+      {/* MODAL RECHAZAR SOLICITUD */}
       {mostrarModalRechazo && solicitudSeleccionada && (
         <>
           <div className="modal-backdrop show"></div>
@@ -605,21 +595,19 @@ function PanelPrestador() {
                   </div>
                 </div>
                 <div className="modal-footer">
-                  <button 
-                    type="button" 
-                    className="btn btn-secondary"
+                  <Button 
+                    variant="secondary"
                     onClick={() => setMostrarModalRechazo(false)}
                   >
                     Cancelar
-                  </button>
-                  <button 
-                    type="button" 
-                    className="btn btn-danger"
+                  </Button>
+                  <Button 
+                    variant="danger"
                     onClick={rechazarSolicitud}
+                    icon="x-circle"
                   >
-                    <i className="bi bi-x-circle me-2"></i>
                     Confirmar Rechazo
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>
@@ -685,13 +673,12 @@ function PanelPrestador() {
                   </div>
                 </div>
                 <div className="modal-footer">
-                  <button 
-                    type="button" 
-                    className="btn btn-secondary"
+                  <Button 
+                    variant="secondary"
                     onClick={() => setMostrarDetalles(false)}
                   >
                     Cerrar
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>

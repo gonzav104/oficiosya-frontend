@@ -1,8 +1,9 @@
 import { Link } from 'react-router-dom';
 import React, { useState } from 'react';
-import './PanelSolicitante.css';
+import { Button, ValidatedInput } from '../components/common';
+import '../styles/pages/PanelSolicitante.css';
 
-// --- Datos de Ejemplo (Mock Data) ---
+// Datos de Ejemplo
 const solicitudesFalsas = [
   { 
     id: 1, 
@@ -86,7 +87,7 @@ function PanelSolicitante() {
   const [showModal, setShowModal] = useState(false);
   const [errores, setErrores] = useState({});
   
-  // Estado del formulario según RF7
+  // Estado del formulario de nueva solicitud
   const [formData, setFormData] = useState({
     titulo: '',
     categoria: '',
@@ -95,7 +96,7 @@ function PanelSolicitante() {
     imagenes: []
   });
 
-  // === NUEVOS ESTADOS PARA GESTIÓN DE PRESUPUESTOS (RF19-RF24) ===
+  // Nuevo estado para el modal de presupuesto recibido
   const [showModalPresupuesto, setShowModalPresupuesto] = useState(false);
   const [presupuestoSeleccionado, setPresupuestoSeleccionado] = useState(null);
   const [presupuestoAceptado, setPresupuestoAceptado] = useState(false);
@@ -120,15 +121,15 @@ function PanelSolicitante() {
 
   const handleAceptarPresupuesto = () => {
     setPresupuestoAceptado(true);
-    alert("✅ Presupuesto aceptado. La solicitud cambia a 'Pendiente de Calificación'.");
+    alert("Presupuesto aceptado. La solicitud cambia a 'Pendiente de Calificación'.");
   };
 
   const handleRechazarPresupuesto = () => {
-    alert("❌ Has rechazado el presupuesto. La solicitud permanecerá en estado 'Cotizada'.");
+    alert("Has rechazado el presupuesto. La solicitud permanecerá en estado 'Cotizada'.");
     setShowModalPresupuesto(false);
   };
 
-  // RF13: Filtrar solicitudes por estado
+  // Filtrar solicitudes por estado
   const solicitudesFiltradas = solicitudesFalsas.filter(solicitud => {
     if (filtro === 'Todos') return true;
     return solicitud.estado === filtro;
@@ -141,7 +142,6 @@ function PanelSolicitante() {
       ...prev,
       [name]: value
     }));
-    // Limpiar error del campo al escribir
     if (errores[name]) {
       setErrores(prev => ({
         ...prev,
@@ -272,10 +272,14 @@ function PanelSolicitante() {
           <h2 className="mb-1">¡Bienvenido, Juan!</h2>
           <p className="text-muted">Gestiona tus solicitudes de servicio</p>
         </div>
-        <button className="btn btn-success btn-lg" onClick={() => setShowModal(true)}>
-          <i className="bi bi-plus-circle me-2"></i>
+        <Button 
+          variant="success" 
+          size="large" 
+          onClick={() => setShowModal(true)}
+          icon="plus-circle"
+        >
           Crear Nueva Solicitud
-        </button>
+        </Button>
       </div>
 
       {/* FILTROS */}
@@ -338,17 +342,26 @@ function PanelSolicitante() {
                   </p>
                 </div>
                 <div className="card-footer bg-transparent">
-                  <Link to={`/solicitud/${solicitud.id}`} className="btn btn-outline-primary btn-sm w-100">
-                    <i className="bi bi-eye me-2"></i>Ver Detalles
-                  </Link>
+                  <Button 
+                    as={Link} 
+                    to={`/solicitud/${solicitud.id}`} 
+                    variant="outline-primary" 
+                    size="small"
+                    icon="eye"
+                    className="w-100"
+                  >
+                    Ver Detalles
+                  </Button>
                   {solicitud.estado === 'Cotizada' && (
-                    <button 
-                      className="btn btn-warning btn-sm w-100 mt-2"
+                    <Button 
+                      variant="warning" 
+                      size="small"
                       onClick={handleMostrarPresupuesto}
+                      icon="cash-coin"
+                      className="w-100 mt-2"
                     >
-                      <i className="bi bi-cash-coin me-2"></i>
                       Ver Presupuesto Recibido
-                    </button>
+                    </Button>
                   )}
                 </div>
               </div>
@@ -381,21 +394,18 @@ function PanelSolicitante() {
                 <div className="modal-body">
                   <form onSubmit={handleGuardarSolicitud} id="formSolicitud">
                     {/* Campos del formulario */}
-                    <div className="mb-3">
-                      <label htmlFor="titulo" className="form-label">Título <span className="text-danger">*</span></label>
-                      <input 
-                        type="text" 
-                        className={`form-control ${errores.titulo ? 'is-invalid' : ''}`}
-                        id="titulo"
-                        name="titulo"
-                        value={formData.titulo}
-                        onChange={handleInputChange}
-                        maxLength="80"
-                        placeholder="Ej: Reparación de canilla en cocina"
-                      />
-                      <small className="text-muted">{formData.titulo.length}/80 caracteres</small>
-                      {errores.titulo && <div className="invalid-feedback d-block">{errores.titulo}</div>}
-                    </div>
+                    <ValidatedInput
+                      type="text"
+                      name="titulo"
+                      label="Título"
+                      value={formData.titulo}
+                      onChange={handleInputChange}
+                      error={errores.titulo}
+                      maxLength={80}
+                      placeholder="Ej: Reparación de canilla en cocina"
+                      required
+                      helpText={`${formData.titulo.length}/80 caracteres`}
+                    />
 
                     <div className="row">
                       <div className="col-md-6 mb-3">
@@ -429,21 +439,19 @@ function PanelSolicitante() {
                       </div>
                     </div>
 
-                    <div className="mb-3">
-                      <label htmlFor="descripcion" className="form-label">Descripción <span className="text-danger">*</span></label>
-                      <textarea 
-                        className={`form-control ${errores.descripcion ? 'is-invalid' : ''}`}
-                        id="descripcion"
-                        name="descripcion"
-                        value={formData.descripcion}
-                        onChange={handleInputChange}
-                        rows="4"
-                        maxLength="500"
-                        placeholder="Describe detalladamente el servicio que necesitas..."
-                      ></textarea>
-                      <small className="text-muted">{formData.descripcion.length}/500 caracteres</small>
-                      {errores.descripcion && <div className="invalid-feedback d-block">{errores.descripcion}</div>}
-                    </div>
+                    <ValidatedInput
+                      as="textarea"
+                      name="descripcion"
+                      label="Descripción"
+                      value={formData.descripcion}
+                      onChange={handleInputChange}
+                      error={errores.descripcion}
+                      rows={4}
+                      maxLength={500}
+                      placeholder="Describe detalladamente el servicio que necesitas..."
+                      required
+                      helpText={`${formData.descripcion.length}/500 caracteres`}
+                    />
 
                     <div className="mb-3">
                       <label htmlFor="imagenes" className="form-label">Imágenes (opcional)</label>
@@ -460,12 +468,21 @@ function PanelSolicitante() {
                   </form>
                 </div>
                 <div className="modal-footer">
-                  <button type="button" className="btn btn-secondary" onClick={handleCancelar}>
-                    <i className="bi bi-x-circle me-2"></i>Cancelar
-                  </button>
-                  <button type="submit" form="formSolicitud" className="btn btn-primary">
-                    <i className="bi bi-check-circle me-2"></i>Publicar Solicitud
-                  </button>
+                  <Button 
+                    variant="secondary" 
+                    onClick={handleCancelar}
+                    icon="x-circle"
+                  >
+                    Cancelar
+                  </Button>
+                  <Button 
+                    type="submit" 
+                    form="formSolicitud" 
+                    variant="primary"
+                    icon="check-circle"
+                  >
+                    Publicar Solicitud
+                  </Button>
                 </div>
               </div>
             </div>
@@ -517,17 +534,29 @@ function PanelSolicitante() {
                 <div className="modal-footer">
                   {!presupuestoAceptado ? (
                     <>
-                      <button className="btn btn-secondary" onClick={handleRechazarPresupuesto}>
-                        <i className="bi bi-x-circle me-2"></i>Cancelar
-                      </button>
-                      <button className="btn btn-success" onClick={handleAceptarPresupuesto}>
-                        <i className="bi bi-check-circle me-2"></i>Aceptar Presupuesto
-                      </button>
+                      <Button 
+                        variant="secondary" 
+                        onClick={handleRechazarPresupuesto}
+                        icon="x-circle"
+                      >
+                        Cancelar
+                      </Button>
+                      <Button 
+                        variant="success" 
+                        onClick={handleAceptarPresupuesto}
+                        icon="check-circle"
+                      >
+                        Aceptar Presupuesto
+                      </Button>
                     </>
                   ) : (
-                    <button className="btn btn-primary" onClick={() => setShowModalPresupuesto(false)}>
-                      <i className="bi bi-door-closed me-2"></i>Cerrar
-                    </button>
+                    <Button 
+                      variant="primary" 
+                      onClick={() => setShowModalPresupuesto(false)}
+                      icon="door-closed"
+                    >
+                      Cerrar
+                    </Button>
                   )}
                 </div>
               </div>
