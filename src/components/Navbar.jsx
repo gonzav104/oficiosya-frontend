@@ -1,7 +1,8 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import logo from '../assets/logo_nombre.png'; // Asegúrate de que esta ruta sea correcta
-import './Navbar.css'; // Asegúrate de tener este archivo CSS importado
+import { Button } from './common';
+import logo from '../assets/logo_nombre.png';
+import '../styles/components/Navbar.css';
 
 function Navbar() {
   return (
@@ -12,21 +13,47 @@ function Navbar() {
           <img src={logo} alt="Logo de OficiosYA" className="navbar-logo" />
         </Link>
 
-        <div className="collapse navbar-collapse">
-          <div className="ms-auto d-flex align-items-center">
+        {/* === BOTÓN RESPONSIVE === */}
+        <button 
+          className="navbar-toggler" 
+          type="button" 
+          data-bs-toggle="collapse" 
+          data-bs-target="#navbarContent"
+          aria-controls="navbarContent" 
+          aria-expanded="false" 
+          aria-label="Toggle navigation"
+        >
+          <span className="navbar-toggler-icon"></span>
+        </button>
+
+        {/* === CONTENIDO COLAPSABLE === */}
+        <div className="collapse navbar-collapse" id="navbarContent">
+          <div className="ms-auto">
             {/* === BOTONES CON NUEVOS ESTILOS === */}
             <ul className="navbar-nav align-items-center">
-              <li className="nav-item me-2">
-                <Link className="btn btn-navbar btn-navbar-secondary" to="/login">
-                  <i className="bi bi-box-arrow-in-right"></i>
+              <li className="nav-item me-2 mb-2 mb-lg-0">
+                <Button 
+                  as={Link} 
+                  to="/login"
+                  variant="secondary" 
+                  size="medium"
+                  icon="box-arrow-in-right"
+                  className="w-100"
+                >
                   Iniciar Sesión
-                </Link>
+                </Button>
               </li>
               <li className="nav-item">
-                <Link className="btn btn-navbar btn-navbar-primary" to="/registro">
-                  <i className="bi bi-person-plus-fill"></i>
+                <Button 
+                  as={Link} 
+                  to="/registro"
+                  variant="primary" 
+                  size="medium"
+                  icon="person-plus-fill"
+                  className="w-100"
+                >
                   Registrarse
-                </Link>
+                </Button>
               </li>
             </ul>
           </div>
