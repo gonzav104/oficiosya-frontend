@@ -61,7 +61,7 @@ function Registro() {
     const cargarDatos = async () => {
       setLoadingData(true);
       try {
-        // Obtener categorías (de tu backend) y provincias (GeoRef)
+        // Obtener categorías del back y provincias (GeoRef)
         const [categoriasResponse, provinciasGeoRef] = await Promise.all([
           categoriaService.getAll(),
           getProvincias()
