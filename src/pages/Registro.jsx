@@ -1,12 +1,12 @@
 import React, { useState, useEffect} from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { categoriaService, ubicacionService } from '../api/api';
+import { categoriaService } from '../api/api';
+import { getProvincias, getLocalidades } from '../api/georef';
 import { ValidatedInput, PasswordInput, Button, AlertMessage, LoadingSpinner } from '../components/common';
 import '../styles/pages/Auth.css';
 import logo from '../assets/logo_isotipo.png';
 import {
-  provinciasArgentinas,
   generarEnlaceWhatsApp,
   validarRegistroCompleto,
   validarImagenes,
@@ -22,7 +22,9 @@ function Registro() {
   const [isLoading, setIsLoading] = useState(false);
   const [categorias, setCategorias] = useState([]);
   const [provincias, setProvincias] = useState([]);
+  const [localidades, setLocalidades] = useState([]);
   const [loadingData, setLoadingData] = useState(false);
+  const [loadingLocalidades, setLoadingLocalidades] = useState(false);
 
   // Datos comunes para ambos tipos de usuario
   const [datosComunes, setDatosComunes] = useState({
@@ -59,41 +61,51 @@ function Registro() {
     const cargarDatos = async () => {
       setLoadingData(true);
       try {
-        const [categoriasResponse, provinciasResponse] = await Promise.all([
+        // Obtener categorías (de tu backend) y provincias (GeoRef)
+        const [categoriasResponse, provinciasGeoRef] = await Promise.all([
           categoriaService.getAll(),
-          ubicacionService.getProvincias()
+          getProvincias()
         ]);
-        
-        // Procesar categorías
         const categoriasData = categoriasResponse.data || categoriasResponse.categorias || [];
         setCategorias(categoriasData);
-        
-        // Procesar provincias
-        const provinciasData = provinciasResponse.data || provinciasResponse.provincias || [];
-        setProvincias(provinciasData);
-        
+        setProvincias(provinciasGeoRef);
       } catch (error) {
-        // Usar datos por defecto en caso de error
-        const categoriasDefecto = [
-          'Plomería', 'Electricidad', 'Pintura', 'Carpintería', 
+        // Fallback en caso de error
+        setCategorias([
+          'Plomería', 'Electricidad', 'Pintura', 'Carpintería',
           'Albañilería', 'Gasista', 'Herrería', 'Jardinería',
           'Techista', 'Limpieza', 'Refrigeración', 'Aire Acondicionado'
-        ];
-        
-        const provinciasDefecto = [
+        ]);
+        setProvincias([
           'Buenos Aires', 'Córdoba', 'Santa Fe', 'Mendoza',
           'Tucumán', 'Entre Ríos', 'Salta', 'Chaco'
-        ];
-        
-        setCategorias(categoriasDefecto);
-        setProvincias(provinciasDefecto);
+        ]);
       } finally {
         setLoadingData(false);
       }
     };
-
     cargarDatos();
   }, []);
+
+  // Cargar localidades cuando cambia la provincia
+  useEffect(() => {
+    const cargarLocalidades = async () => {
+      setLoadingLocalidades(true);
+      try {
+        if (datosComunes.provincia) {
+          const localidadesGeoRef = await getLocalidades(datosComunes.provincia);
+          setLocalidades(localidadesGeoRef);
+        } else {
+          setLocalidades([]);
+        }
+      } catch (error) {
+        setLocalidades([]);
+      } finally {
+        setLoadingLocalidades(false);
+      }
+    };
+    cargarLocalidades();
+  }, [datosComunes.provincia]);
 
   // Filtrar sugerencias de categorías
   const sugerenciasFiltradas = Array.isArray(categorias) ? categorias.filter(
@@ -509,7 +521,7 @@ if (loadingData) {
 
                   <div className="mb-3">
                     <label htmlFor="experienciaAnios" className="form-label">
-                      Años de experiencia <span className="text-danger">*</span>
+                      Años de experiencia <span className="text-muted">(opcional)</span>
                     </label>
                     <select
                       className={`form-select ${errores.experienciaAnios ? 'is-invalid' : ''}`}
@@ -517,7 +529,6 @@ if (loadingData) {
                       name="experienciaAnios"
                       value={datosPrestador.experienciaAnios}
                       onChange={handlePrestadorChange}
-                      required
                     >
                       <option value="">Seleccioná tu experiencia</option>
                       <option value="0">Sin experiencia previa</option>
@@ -532,7 +543,7 @@ if (loadingData) {
                       <option value="21">Más de 20 años</option>
                     </select>
                     <small className="text-muted">
-                      Seleccioná los años de experiencia que tenés en el oficio
+                      Seleccioná los años de experiencia que tenés en el oficio (opcional)
                     </small>
                     {errores.experienciaAnios && (
                       <div className="invalid-feedback d-block">{errores.experienciaAnios}</div>
@@ -555,7 +566,7 @@ if (loadingData) {
                   <label htmlFor="provincia" className="form-label">
                     Provincia <span className="text-danger">*</span>
                   </label>
-                  <select 
+                  <select
                     className={`form-select ${errores.provincia ? 'is-invalid' : ''}`}
                     id="provincia"
                     name="provincia"
@@ -563,7 +574,7 @@ if (loadingData) {
                     onChange={handleComunesChange}
                   >
                     <option value="">Seleccioná una provincia</option>
-                    {(provincias.length > 0 ? provincias : provinciasArgentinas).map(provincia => (
+                    {provincias.map((provincia) => (
                       <option key={provincia} value={provincia}>{provincia}</option>
                     ))}
                   </select>
@@ -576,15 +587,25 @@ if (loadingData) {
                   <label htmlFor="localidad" className="form-label">
                     Localidad <span className="text-danger">*</span>
                   </label>
-                  <input 
-                    type="text" 
-                    className={`form-control ${errores.localidad ? 'is-invalid' : ''}`}
-                    id="localidad"
-                    name="localidad"
-                    value={datosComunes.localidad}
-                    onChange={handleComunesChange}
-                    placeholder="Buenos Aires, Rosario, Córdoba..."
-                  />
+                  {loadingLocalidades ? (
+                    <div className="form-control bg-light text-muted" style={{ minHeight: 38 }}>
+                      Cargando localidades...
+                    </div>
+                  ) : (
+                    <select
+                      className={`form-select ${errores.localidad ? 'is-invalid' : ''}`}
+                      id="localidad"
+                      name="localidad"
+                      value={datosComunes.localidad}
+                      onChange={handleComunesChange}
+                      disabled={!datosComunes.provincia || localidades.length === 0}
+                    >
+                      <option value="">Seleccioná una localidad</option>
+                      {localidades.map((localidad) => (
+                        <option key={localidad} value={localidad}>{localidad}</option>
+                      ))}
+                    </select>
+                  )}
                   {errores.localidad && (
                     <div className="invalid-feedback">{errores.localidad}</div>
                   )}
