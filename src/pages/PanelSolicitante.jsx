@@ -1,10 +1,15 @@
 import { Link } from 'react-router-dom';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button, ValidatedInput } from '../components/common';
+import { getUbicacionDelUsuario } from '../utils/userUtils'; // *CAMBIO*----------------------
+import { getSolicitudes } from '../utils/solicitudes'; // *CAMBIO*----------------------
+import { useAuth } from '../contexts/AuthContext'; // *CAMBIO*----------------------
 import '../styles/pages/PanelSolicitante.css';
 
+
+
 // Datos de Ejemplo
-const solicitudesFalsas = [
+/*const solicitudesFalsas = [
   { 
     id: 1, 
     titulo: 'Reparación de canilla en cocina', 
@@ -60,46 +65,41 @@ const solicitudesFalsas = [
     descripcion: 'Necesito revisión completa de la instalación de gas natural.',
     imagenes: []
   }
-];
+]; 
+*/
 
-const categorias = [
-  'Plomería',
-  'Electricidad',
-  'Pintura',
-  'Carpintería',
-  'Gasista',
-  'Albañilería',
-  'Refrigeración',
-  'Herrería'
-];
-
-const localidades = [
-  'Baradero',
-  'San Pedro',
-  'Ramallo',
-  'San Nicolás',
-  'Pergamino'
-];
 // ------------------------------------
 
 function PanelSolicitante() {
+
   const [filtro, setFiltro] = useState('Todos');
   const [showModal, setShowModal] = useState(false);
   const [errores, setErrores] = useState({});
-  
+  const [loading, setLoading] = useState(true); //*CAMIBIO*--------
+  const [solicitudes, setSolicitudes] = useState([]); //*CAMIBIO*--------
+  const [categorias, setCategorias] = useState([]); //*CAMIBIO*--------
+  const [idUbicacionUsuario, setIdUbicacionUsuario] = useState(null); //*CAMIBIO*--------
+
+  const { user } = useAuth();  //*CAMIBIO*--------
+
+
   // Estado del formulario de nueva solicitud
   const [formData, setFormData] = useState({
     titulo: '',
     categoria: '',
-    localidad: '',
     descripcion: '',
     imagenes: []
   });
+
+  //---------------------------
 
   // Nuevo estado para el modal de presupuesto recibido
   const [showModalPresupuesto, setShowModalPresupuesto] = useState(false);
   const [presupuestoSeleccionado, setPresupuestoSeleccionado] = useState(null);
   const [presupuestoAceptado, setPresupuestoAceptado] = useState(false);
+
+
+
 
   // Simulación de presupuesto recibido
   const presupuestoEjemplo = {
@@ -113,6 +113,8 @@ function PanelSolicitante() {
       whatsapp: "https://wa.me/543329456789"
     }
   };
+
+
 
   const handleMostrarPresupuesto = () => {
     setPresupuestoSeleccionado(presupuestoEjemplo);
@@ -129,8 +131,66 @@ function PanelSolicitante() {
     setShowModalPresupuesto(false);
   };
 
+
+
+  //*CAMIBIO*---------------------------------------------------------------------------------------------
+
+  // 1. Cargar solicitudes del cliente (depende de id_cliente)
+  useEffect(() => {
+    if (!user?.id_cliente) {
+      setSolicitudes([]);
+      return;
+    }
+
+    async function cargarSolicitudes() {
+      setLoading(true);
+      const data = await getSolicitudes(user.id_cliente);
+      setSolicitudes(data);
+      setLoading(false);
+    }
+
+    cargarSolicitudes();
+  }, [user?.id_cliente]);
+
+
+  // 2. Cargar categorías (solo una vez, nunca cambia)
+  useEffect(() => {
+    fetch("http://localhost:3000/api/categorias")
+      .then(res => res.json())
+      .then(json => setCategorias(json.data?.categoriasCompletas || []))
+      .catch(() => setCategorias([]));
+  }, []);
+
+  //3. Cargar ubicación del usuario
+  useEffect(() => {
+    if (!user?.id_cliente) {
+      setIdUbicacionUsuario(null);
+      return;
+    }
+
+    const cargarUbicacion = async () => {
+      try {
+        const idUbicacion = await getUbicacionDelUsuario(user.id_usuario);
+        if (idUbicacion) {
+          setIdUbicacionUsuario(idUbicacion);
+        } else {
+          alert("Completa tu ubicación en el perfil para poder crear solicitudes.");
+        }
+      } catch (error) {
+        console.error("Error cargando ubicación:", error);
+        alert("Error al cargar tu ubicación.");
+      }
+    };
+
+    cargarUbicacion();
+  }, [user?.id_cliente]);
+
+  //-------------------------------------------------------------------------------------------------------
+
+
   // Filtrar solicitudes por estado
-  const solicitudesFiltradas = solicitudesFalsas.filter(solicitud => {
+
+  const solicitudesFiltradas = solicitudes.filter(solicitud => {  //*CAMIBIO*--------SOLICITUDESFALSAS POR SOLICITUDES
     if (filtro === 'Todos') return true;
     return solicitud.estado === filtro;
   });
@@ -194,6 +254,8 @@ function PanelSolicitante() {
 
     if (!formData.titulo.trim()) {
       nuevosErrores.titulo = 'El título es obligatorio';
+    } else if (formData.titulo.trim().length < 5) {         // *CAMBIO*-----------
+      nuevosErrores.titulo = 'El título debe tener al menos 5 caracteres';
     } else if (formData.titulo.length > 80) {
       nuevosErrores.titulo = 'Ingrese un título válido (máx. 80 caracteres)';
     }
@@ -202,12 +264,10 @@ function PanelSolicitante() {
       nuevosErrores.categoria = 'Debe seleccionar una categoría de servicio';
     }
 
-    if (!formData.localidad) {
-      nuevosErrores.localidad = 'Seleccione una localidad válida';
-    }
-
     if (!formData.descripcion.trim()) {
       nuevosErrores.descripcion = 'La descripción es obligatoria';
+    } else if (formData.descripcion.trim().length < 10) {     // *CAMBIO*-----------  
+      nuevosErrores.descripcion = 'La descripción debe tener al menos 10 caracteres';
     } else if (formData.descripcion.length > 500) {
       nuevosErrores.descripcion = 'Ingrese una descripción de hasta 500 caracteres';
     }
@@ -216,31 +276,64 @@ function PanelSolicitante() {
     return Object.keys(nuevosErrores).length === 0;
   };
 
-  const handleGuardarSolicitud = (e) => {
+  // Manejo de envío del formulario de nueva solicitud - *CAMBIO*----------------------
+
+  const handleGuardarSolicitud = async (e) => {
     e.preventDefault();
 
-    if (validarFormulario()) {
-      console.log("Nueva solicitud guardada:", formData);
-      alert('Solicitud creada correctamente.');
-      setFormData({
-        titulo: '',
-        categoria: '',
-        localidad: '',
-        descripcion: '',
-        imagenes: []
+    if (!validarFormulario()) return;
+    if (!user?.id_cliente) return alert("No estás autenticado");
+    if (!idUbicacionUsuario) return alert("Falta ubicación");
+
+    const body = {
+      id_categoria: parseInt(formData.categoria),
+      id_ubicacion: idUbicacionUsuario,
+      titulo: formData.titulo.trim(),
+      descripcion: formData.descripcion.trim()
+    };
+
+    try {
+      const response = await fetch(`http://localhost:3000/api/clientes/${user.id_cliente}/solicitudes`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(body)
       });
-      setErrores({});
-      setShowModal(false);
+
+      const result = await response.json();
+
+      if (response.ok) {
+        alert("Solicitud creada con éxito");
+        setFormData({
+          titulo: '',
+          categoria: '',
+          descripcion: '',
+          imagenes: []
+        });
+        setErrores({});
+        setShowModal(false);
+        // recargar solicitudes...
+        const nuevas = await getSolicitudes(user.id_cliente);
+        setSolicitudes(nuevas);
+        
+      } else {
+        alert(result.message("Error al crear solicitud"));
+      }
+
+    } catch (err) {
+      console.error(err);
+      alert("Error de conexión");
     }
   };
 
   const handleCancelar = () => {
-    if (formData.titulo || formData.descripcion || formData.categoria || formData.localidad) {
+    if (formData.titulo || formData.descripcion || formData.categoria) {
       if (window.confirm('¿Desea cancelar la creación de la solicitud? Los datos no guardados se perderán.')) {
         setFormData({
           titulo: '',
           categoria: '',
-          localidad: '',
           descripcion: '',
           imagenes: []
         });
@@ -272,9 +365,9 @@ function PanelSolicitante() {
           <h2 className="mb-1">¡Bienvenido, Juan!</h2>
           <p className="text-muted">Gestiona tus solicitudes de servicio</p>
         </div>
-        <Button 
-          variant="success" 
-          size="large" 
+        <Button
+          variant="success"
+          size="large"
           onClick={() => setShowModal(true)}
           icon="plus-circle"
         >
@@ -298,8 +391,8 @@ function PanelSolicitante() {
             <ul className="dropdown-menu dropdown-menu-end">
               {['Todos', 'Iniciada', 'Enviada', 'Cotizada', 'Pendiente de Calificación', 'Cerrada', 'Cancelada'].map((estado) => (
                 <li key={estado}>
-                  <button 
-                    className={`dropdown-item ${filtro === estado ? 'active' : ''}`} 
+                  <button
+                    className={`dropdown-item ${filtro === estado ? 'active' : ''}`}
                     onClick={() => setFiltro(estado)}
                   >
                     {estado}
@@ -310,7 +403,7 @@ function PanelSolicitante() {
           </div>
         </div>
       </div>
-      
+
       {/* GRILLA DE SOLICITUDES */}
       <div className="row g-4">
         {solicitudesFiltradas.length > 0 ? (
@@ -336,16 +429,16 @@ function PanelSolicitante() {
                     </span>
                   </div>
                   <p className="card-text text-muted">
-                    {solicitud.descripcion.length > 100 
-                      ? solicitud.descripcion.substring(0, 100) + '...' 
+                    {solicitud.descripcion.length > 100
+                      ? solicitud.descripcion.substring(0, 100) + '...'
                       : solicitud.descripcion}
                   </p>
                 </div>
                 <div className="card-footer bg-transparent">
-                  <Button 
-                    as={Link} 
-                    to={`/solicitud/${solicitud.id}`} 
-                    variant="outline-primary" 
+                  <Button
+                    as={Link}
+                    to={`/solicitud/${solicitud.id}`}
+                    variant="outline-primary"
                     size="small"
                     icon="eye"
                     className="w-100"
@@ -353,8 +446,8 @@ function PanelSolicitante() {
                     Ver Detalles
                   </Button>
                   {solicitud.estado === 'Cotizada' && (
-                    <Button 
-                      variant="warning" 
+                    <Button
+                      variant="warning"
                       size="small"
                       onClick={handleMostrarPresupuesto}
                       icon="cash-coin"
@@ -408,9 +501,9 @@ function PanelSolicitante() {
                     />
 
                     <div className="row">
-                      <div className="col-md-6 mb-3">
+                      <div className="mb-3">
                         <label htmlFor="categoria" className="form-label">Categoría <span className="text-danger">*</span></label>
-                        <select 
+                        <select
                           className={`form-select ${errores.categoria ? 'is-invalid' : ''}`}
                           id="categoria"
                           name="categoria"
@@ -418,25 +511,11 @@ function PanelSolicitante() {
                           onChange={handleInputChange}
                         >
                           <option value="">Seleccionar...</option>
-                          {categorias.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                          {categorias.map(cat => <option key={cat.id_categoria} value={cat.id_categoria}>{cat.nombre}</option>)}
                         </select>
                         {errores.categoria && <div className="invalid-feedback d-block">{errores.categoria}</div>}
                       </div>
 
-                      <div className="col-md-6 mb-3">
-                        <label htmlFor="localidad" className="form-label">Localidad <span className="text-danger">*</span></label>
-                        <select 
-                          className={`form-select ${errores.localidad ? 'is-invalid' : ''}`}
-                          id="localidad"
-                          name="localidad"
-                          value={formData.localidad}
-                          onChange={handleInputChange}
-                        >
-                          <option value="">Seleccionar...</option>
-                          {localidades.map(loc => <option key={loc} value={loc}>{loc}</option>)}
-                        </select>
-                        {errores.localidad && <div className="invalid-feedback d-block">{errores.localidad}</div>}
-                      </div>
                     </div>
 
                     <ValidatedInput
@@ -455,12 +534,12 @@ function PanelSolicitante() {
 
                     <div className="mb-3">
                       <label htmlFor="imagenes" className="form-label">Imágenes (opcional)</label>
-                      <input 
+                      <input
                         className={`form-control ${errores.imagenes ? 'is-invalid' : ''}`}
-                        type="file" 
+                        type="file"
                         id="imagenes"
                         onChange={handleImageChange}
-                        multiple 
+                        multiple
                         accept=".jpg,.jpeg,.png"
                       />
                       {errores.imagenes && <div className="invalid-feedback d-block">{errores.imagenes}</div>}
@@ -468,16 +547,16 @@ function PanelSolicitante() {
                   </form>
                 </div>
                 <div className="modal-footer">
-                  <Button 
-                    variant="secondary" 
+                  <Button
+                    variant="secondary"
                     onClick={handleCancelar}
                     icon="x-circle"
                   >
                     Cancelar
                   </Button>
-                  <Button 
-                    type="submit" 
-                    form="formSolicitud" 
+                  <Button
+                    type="submit"
+                    form="formSolicitud"
                     variant="primary"
                     icon="check-circle"
                   >
@@ -534,15 +613,15 @@ function PanelSolicitante() {
                 <div className="modal-footer">
                   {!presupuestoAceptado ? (
                     <>
-                      <Button 
-                        variant="secondary" 
+                      <Button
+                        variant="secondary"
                         onClick={handleRechazarPresupuesto}
                         icon="x-circle"
                       >
                         Cancelar
                       </Button>
-                      <Button 
-                        variant="success" 
+                      <Button
+                        variant="success"
                         onClick={handleAceptarPresupuesto}
                         icon="check-circle"
                       >
@@ -550,8 +629,8 @@ function PanelSolicitante() {
                       </Button>
                     </>
                   ) : (
-                    <Button 
-                      variant="primary" 
+                    <Button
+                      variant="primary"
                       onClick={() => setShowModalPresupuesto(false)}
                       icon="door-closed"
                     >
