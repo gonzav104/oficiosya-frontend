@@ -30,7 +30,7 @@ export async function getSolicitudes(idCliente) {
       fechaCreacion: item.fecha_creacion,
       hace: calcularHace(item.fecha_creacion),
       descripcion: item.descripcion,
-      imagenes: item.imagenes || [] // por si vienen
+      imagenes: item.imagenes || [] 
     }));
 
   } catch (error) {
@@ -39,7 +39,7 @@ export async function getSolicitudes(idCliente) {
   }
 }
 
-// Función auxiliar 
+// Calcula el tiempo transcurrido desde la fecha dada hasta ahora
 export function calcularHace(fecha) {
   const ahora = Date.now();
   const fechaCreacion = new Date(fecha).getTime();
@@ -51,4 +51,49 @@ export function calcularHace(fecha) {
   
   const diffDays = Math.floor(diffHrs / 24);
   return ` ${diffDays} día${diffDays > 1 ? 's' : ''}`;
+}
+
+// Normaliza la estructura que devuelve tu backend
+function mapPrestador(p) {
+  return {
+    id: p.id_prestador,
+    nombrePublico: p.nombre_completo,
+    categoria: p.categorias?.[0]?.nombre || "Sin categoría",
+    localidad: p.ubicacion?.localidad,
+    calificacionPromedio: 5,      // modificar si agregás ratings reales
+    cantidadResenas: 0,
+    trabajosRealizados: 0,
+    experiencia: p.categorias?.[0]?.PrestadorCategoria?.descripcion_trabajo,
+    foto: "👨‍🔧"
+  };
+}
+
+// Obtener prestadores recomendados
+export async function getPrestadores(idSolicitud) {
+  try {
+    const res = await fetch(`http://localhost:3000/api/clientes/solicitudes/${idSolicitud}/prestadores`);
+    const data = await res.json();
+
+    if (!data.success) return [];
+
+    return data.data.prestadores.map(mapPrestador);
+  } catch (error) {
+    console.error("Error getPrestadores:", error);
+    return [];
+  }
+}
+
+// Obtener prestadores cercanos
+export async function getPrestadoresCercanos(idSolicitud) {
+  try {
+    const res = await fetch(`http://localhost:3000/api/clientes/solicitudes/${idSolicitud}/prestadores-cercanos`);
+    const data = await res.json();
+
+    if (!data.success) return [];
+
+    return data.data.prestadores.map(mapPrestador);
+  } catch (error) {
+    console.error("Error getPrestadoresCercanos:", error);
+    return [];
+  }
 }
