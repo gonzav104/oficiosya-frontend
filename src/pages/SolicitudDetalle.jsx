@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '../components/common';
+import { getSolicitudes } from '../utils/solicitudes'; // CAMBIO------------------------------
+import { useAuth } from '../contexts/AuthContext'; // *CAMBIO*----------------------
 import '../styles/pages/SolicitudDetalle.css';
-
+/*
 // Datos de prueba
 const solicitudesFalsas = [
   { id: 1, titulo: 'Reparación de canilla en cocina', categoria: 'Plomería', localidad: 'Baradero', estado: 'Iniciada', fechaCreacion: '15/01/2025', descripcion: 'Se necesita reparar una canilla que pierde agua constantemente.', imagenes: [] },
@@ -10,7 +12,7 @@ const solicitudesFalsas = [
   { id: 3, titulo: 'Pintura de fachada', categoria: 'Pintura', localidad: 'Ramallo', estado: 'Cotizada', fechaCreacion: '13/01/2025', descripcion: 'Pintar la fachada de una casa de 2 pisos.', imagenes: [] },
   { id: 4, titulo: 'Arreglo de enchufe', categoria: 'Electricidad', localidad: 'San Pedro', estado: 'Pendiente de Calificación', fechaCreacion: '10/01/2025', descripcion: 'Un enchufe dejó de funcionar en la sala de estar.', imagenes: [] },
   { id: 5, titulo: 'Revisión de instalación de gas', categoria: 'Gasista', localidad: 'Baradero', estado: 'Cerrada', fechaCreacion: '20/12/2024', descripcion: 'Necesito revisión completa de la instalación de gas natural.', imagenes: [] },
-];
+]; */
 
 const prestadoresRecomendadosPorSolicitud = {
   1: [
@@ -85,7 +87,31 @@ function SolicitudDetalle() {
   const [calificacion, setCalificacion] = useState(0);
   const [comentarioCalificacion, setComentarioCalificacion] = useState('');
 
-  const solicitud = solicitudesFalsas.find((s) => s.id === parseInt(id));
+  //--------------------------------------------------------------
+
+  const [solicitudes, setSolicitudes] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (!user?.id_cliente) {
+      setSolicitudes([]);
+      return;
+    }
+
+    async function cargarSolicitudes() {
+      setLoading(true);
+      const data = await getSolicitudes(user.id_cliente);
+      setSolicitudes(data);
+      setLoading(false);
+    }
+
+    cargarSolicitudes();
+  }, [user?.id_cliente]);
+
+  //--------------------------------------------------------------
+
+  const solicitud = solicitudes.find((s) => s.id === parseInt(id)); // CAMBIO------------------------------
   const prestadoresRecomendados = prestadoresRecomendadosPorSolicitud[parseInt(id)] || [];
   const prestadoresEnZonasCercanas = prestadoresCercanos[parseInt(id)] || [];
   const prestadoresEnviadosLista = prestadoresEnviados[parseInt(id)] || [];
@@ -115,8 +141,8 @@ function SolicitudDetalle() {
   const prestadoresMostrados = buscarCercanos
     ? prestadoresEnZonasCercanas
     : mostrarTodos
-    ? prestadoresRecomendados
-    : prestadoresRecomendados.slice(0, 3);
+      ? prestadoresRecomendados
+      : prestadoresRecomendados.slice(0, 3);
 
   const renderEstrellas = (calificacion) => {
     const estrellas = [];
@@ -148,7 +174,7 @@ function SolicitudDetalle() {
         whatsapp: 'https://wa.me/5491198765432',
       }
     };
-    
+
     setPresupuestoSeleccionado(presupuestoConContacto);
     setPresupuestoAceptado(true);
     alert('Presupuesto aceptado. Se muestran los datos de contacto del prestador.');
@@ -168,7 +194,7 @@ function SolicitudDetalle() {
       alert('Por favor selecciona una calificación de 1 a 5 estrellas.');
       return;
     }
-    
+
     alert(`Calificación enviada: ${calificacion} estrellas. ¡Gracias por tu feedback!`);
     setMostrarModalCalificacion(false);
     setCalificacion(0);
@@ -184,7 +210,7 @@ function SolicitudDetalle() {
           key={i}
           className={`bi ${i <= rating ? 'bi-star-fill' : 'bi-star'} estrella-calificacion`}
           onClick={() => setRating(i)}
-          style={{ 
+          style={{
             cursor: 'pointer',
             color: i <= rating ? '#ffc107' : '#dee2e6',
             fontSize: '2rem',
@@ -214,17 +240,16 @@ function SolicitudDetalle() {
                 <span className="badge bg-light text-dark">{solicitud.fechaCreacion}</span>
               </div>
             </div>
-            <span className={`badge-estado ${
-              solicitud.estado === 'Iniciada'
+            <span className={`badge-estado ${solicitud.estado === 'Iniciada'
                 ? 'bg-secondary'
                 : solicitud.estado === 'Enviada'
-                ? 'bg-primary'
-                : solicitud.estado === 'Cotizada'
-                ? 'bg-info'
-                : solicitud.estado === 'Pendiente de Calificación'
-                ? 'bg-warning text-dark'
-                : 'bg-success'
-            }`}>{solicitud.estado}</span>
+                  ? 'bg-primary'
+                  : solicitud.estado === 'Cotizada'
+                    ? 'bg-info'
+                    : solicitud.estado === 'Pendiente de Calificación'
+                      ? 'bg-warning text-dark'
+                      : 'bg-success'
+              }`}>{solicitud.estado}</span>
           </div>
         </div>
         <div className="card-body">
@@ -361,11 +386,10 @@ function SolicitudDetalle() {
                   <div className="card-body">
                     <div className="d-flex justify-content-between mb-3">
                       <h5>{p.prestadorNombre}</h5>
-                      <span className={`badge ${
-                        p.estado === 'Aceptado' ? 'bg-success' : 
-                        p.estado === 'Completado' ? 'bg-primary' : 
-                        'bg-warning text-dark'
-                      }`}>
+                      <span className={`badge ${p.estado === 'Aceptado' ? 'bg-success' :
+                          p.estado === 'Completado' ? 'bg-primary' :
+                            'bg-warning text-dark'
+                        }`}>
                         {p.estado}
                       </span>
                     </div>
@@ -468,7 +492,7 @@ function SolicitudDetalle() {
               Esta solicitud ha sido cerrada exitosamente. El trabajo fue completado y calificado.
             </p>
           </div>
-          
+
           <div className="card trabajo-finalizado mt-4">
             <div className="card-body">
               <h5 className="text-center mb-4">Resumen del Trabajo Finalizado</h5>
@@ -512,7 +536,7 @@ function SolicitudDetalle() {
                     <p className="fs-4 text-success fw-bold">${presupuestoSeleccionado.monto.toLocaleString()}</p>
                     <p>{presupuestoSeleccionado.mensaje}</p>
                   </div>
-                  
+
                   {!presupuestoAceptado ? (
                     <div className="alert alert-info">
                       <i className="bi bi-info-circle me-2"></i>
@@ -526,10 +550,10 @@ function SolicitudDetalle() {
                       </h6>
                       <p className="mb-1">📞 {presupuestoSeleccionado.datosContacto.telefono}</p>
                       <p className="mb-1">📧 {presupuestoSeleccionado.datosContacto.email}</p>
-                      <a 
-                        href={presupuestoSeleccionado.datosContacto.whatsapp} 
-                        target="_blank" 
-                        rel="noreferrer" 
+                      <a
+                        href={presupuestoSeleccionado.datosContacto.whatsapp}
+                        target="_blank"
+                        rel="noreferrer"
                         className="btn btn-success btn-sm w-100 mt-2"
                       >
                         <i className="bi bi-whatsapp me-2"></i>Contactar por WhatsApp
@@ -581,7 +605,7 @@ function SolicitudDetalle() {
                     <h5>¿Cómo fue el servicio?</h5>
                     <p className="text-muted">Tu calificación ayuda a otros usuarios a tomar mejores decisiones</p>
                   </div>
-                  
+
                   <div className="text-center mb-4">
                     <p className="fw-bold mb-3">Selecciona tu calificación:</p>
                     <div className="estrellas-container">
@@ -600,8 +624,8 @@ function SolicitudDetalle() {
 
                   <div className="mb-3">
                     <label htmlFor="comentario" className="form-label">Comentario (opcional)</label>
-                    <textarea 
-                      className="form-control" 
+                    <textarea
+                      className="form-control"
                       id="comentario"
                       rows="3"
                       placeholder="Comparte tu experiencia con este prestador..."
