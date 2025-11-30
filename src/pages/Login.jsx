@@ -41,7 +41,7 @@ function Login() {
       const response = await login(data.email, data.password);
       
       // Obtener el usuario de la respuesta
-      const user = response.user || response.usuario;
+      const user = response.data?.user || response.user || response.usuario;
       
       if (!user) {
         throw new Error('No se pudieron obtener los datos del usuario');
