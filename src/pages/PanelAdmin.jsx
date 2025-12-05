@@ -1,828 +1,327 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import AdminDashboard from '../components/AdminDashboard';
-import AdminReportes from '../components/AdminReportes';
-import { Button, ValidatedInput } from '../components/common';
+import AdminCategorias from '../components/AdminCategorias';
+import { Button, ValidatedInput, LoadingSpinner } from '../components/common';
+import api from '../api/api';
 import '../styles/pages/PanelAdmin.css';
 
-// Datos de Ejemplo para Usuarios
-const usuariosIniciales = [
-  { 
-    id: 1, 
-    nombre: 'María García', 
-    email: 'maria.garcia@email.com', 
-    rol: 'Solicitante', 
-    estado: 'Activo', 
-    fechaRegistro: '05/09/2024',
-    solicitudes: 12, 
-    localidad: 'CABA',
-    ultimoAcceso: '20/01/2025'
-  },
-  { 
-    id: 2, 
-    nombre: 'Elmer Acuña Malvaceda', 
-    email: 'elmer.acuna@email.com', 
-    rol: 'Prestador', 
-    estado: 'Activo', 
-    fechaRegistro: '05/10/2024',
-    trabajos: 156, 
-    localidad: 'Baradero',
-    categorias: ['Plomería', 'Gasista'],
-    calificacion: 4.8,
-    ultimoAcceso: '21/01/2025'
-  },
-  { 
-    id: 3, 
-    nombre: 'Carlos Rodríguez', 
-    email: 'carlos.rodriguez@email.com', 
-    rol: 'Solicitante', 
-    estado: 'Bloqueado', 
-    fechaRegistro: '06/08/2024',
-    solicitudes: 3, 
-    localidad: 'Córdoba',
-    fechaBloqueo: '15/01/2025',
-    motivoBloqueo: 'Comportamiento inapropiado reportado',
-    ultimoAcceso: '14/01/2025'
-  },
-  { 
-    id: 4, 
-    nombre: 'Ana López Fernández', 
-    email: 'ana.lopez@email.com', 
-    rol: 'Prestador', 
-    estado: 'Activo', 
-    fechaRegistro: '08/04/2024',
-    trabajos: 89, 
-    localidad: 'Rosario',
-    categorias: ['Electricidad'],
-    calificacion: 4.9,
-    ultimoAcceso: '21/01/2025'
-  },
-  { 
-    id: 5, 
-    nombre: 'Roberto Silva', 
-    email: 'roberto.silva@email.com', 
-    rol: 'Prestador', 
-    estado: 'Bloqueado', 
-    fechaRegistro: '10/03/2024',
-    trabajos: 12, 
-    localidad: 'San Pedro',
-    categorias: ['Pintura'],
-    calificacion: 3.2,
-    fechaBloqueo: '18/01/2025',
-    motivoBloqueo: 'Calificaciones bajas y quejas de clientes',
-    ultimoAcceso: '17/01/2025'
-  },
-  { 
-    id: 6, 
-    nombre: 'Laura Martínez', 
-    email: 'laura.martinez@email.com', 
-    rol: 'Solicitante', 
-    estado: 'Activo', 
-    fechaRegistro: '12/11/2024',
-    solicitudes: 7, 
-    localidad: 'San Nicolás',
-    ultimoAcceso: '20/01/2025'
-  },
-];
-
-// Historial de acciones administrativas
-const accionesAdministrativasIniciales = [
-  {
-    id: 1,
-    tipoAccion: 'Bloqueo',
-    usuario: 'Carlos Rodríguez',
-    usuarioId: 3,
-    admin: 'Admin Principal',
-    fecha: '15/01/2025 14:30',
-    descripcion: 'Usuario bloqueado por comportamiento inapropiado'
-  },
-  {
-    id: 2,
-    tipoAccion: 'Bloqueo',
-    usuario: 'Roberto Silva',
-    usuarioId: 5,
-    admin: 'Admin Principal',
-    fecha: '18/01/2025 10:15',
-    descripcion: 'Usuario bloqueado por calificaciones bajas'
-  }
-];
-
 function PanelAdmin() {
-  const [usuarios, setUsuarios] = useState(usuariosIniciales);
-  const [accionesAdmin, setAccionesAdmin] = useState(accionesAdministrativasIniciales);
-  const [filtroRol, setFiltroRol] = useState('Todos');
-  const [filtroEstado, setFiltroEstado] = useState('Todos');
-  const [busqueda, setBusqueda] = useState('');
   const [vistaActual, setVistaActual] = useState('dashboard');
   
-  // Modales
-  const [showBlockModal, setShowBlockModal] = useState(false);
-  const [showReactivateModal, setShowReactivateModal] = useState(false);
-  const [showDetalleModal, setShowDetalleModal] = useState(false);
-  const [usuarioSeleccionado, setUsuarioSeleccionado] = useState(null);
+  // Estados de datos
+  const [usuarios, setUsuarios] = useState([]);
+  const [historial, setHistorial] = useState([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
   
-  // Formulario de bloqueo
+  // Estados para Modal de Bloqueo
+  const [showBlockModal, setShowBlockModal] = useState(false);
+  const [usuarioSeleccionado, setUsuarioSeleccionado] = useState(null);
   const [motivoBloqueo, setMotivoBloqueo] = useState('');
 
-  // Bloquear usuario
+  // Efectos de carga
+  useEffect(() => {
+    if (vistaActual === 'usuarios') cargarUsuarios();
+    if (vistaActual === 'historial') cargarHistorial();
+  }, [vistaActual]);
+
+  // Llamadas a la API
+  const cargarUsuarios = async () => {
+    setLoadingUsers(true);
+    try {
+      const res = await api.get('/users');
+      const data = res.data.data || res.data; 
+      setUsuarios(Array.isArray(data) ? data : []); 
+    } catch (error) {
+      console.error("Error cargando usuarios", error);
+      setUsuarios([]);
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
+
+  const cargarHistorial = async () => {
+    setLoadingUsers(true);
+    try {
+      const res = await api.get('/users/historial/moderacion');
+      const data = res.data.data || res.data;
+      setHistorial(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("Error historial", error);
+      setHistorial([]);
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
+
+  // Acciones
+
+  // Abrir modal de bloqueo
   const handleBlockClick = (user) => {
     setUsuarioSeleccionado(user);
     setMotivoBloqueo('');
     setShowBlockModal(true);
   };
 
-  // Reactivar usuario
-  const handleReactivateClick = (user) => {
-    setUsuarioSeleccionado(user);
-    setShowReactivateModal(true);
-  };
-
-  // Ver detalles del usuario
-  const verDetalles = (user) => {
-    setUsuarioSeleccionado(user);
-    setShowDetalleModal(true);
-  };
-
-  // Confirmar bloqueo
-  const confirmBlock = () => {
-    const ahora = new Date().toLocaleString('es-AR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-
-    setUsuarios(usuarios.map(u => 
-      u.id === usuarioSeleccionado.id 
-        ? { 
-            ...u, 
-            estado: 'Bloqueado',
-            fechaBloqueo: ahora.split(' ')[0],
-            motivoBloqueo: motivoBloqueo || 'Sin motivo especificado'
-          } 
-        : u
-    ));
-
-    const nuevaAccion = {
-      id: accionesAdmin.length + 1,
-      tipoAccion: 'Bloqueo',
-      usuario: usuarioSeleccionado.nombre,
-      usuarioId: usuarioSeleccionado.id,
-      admin: 'Admin Principal',
-      fecha: ahora,
-      descripcion: motivoBloqueo || 'Usuario bloqueado sin motivo especificado'
-    };
-    setAccionesAdmin([nuevaAccion, ...accionesAdmin]);
-
-    alert(`Usuario bloqueado exitosamente\n\n${usuarioSeleccionado.nombre} ya no podrá acceder a la plataforma.`);
+  // Confirmar bloqueo o activación
+  const confirmBlock = async () => {
+    if (!usuarioSeleccionado) return;
     
-    setShowBlockModal(false);
-    setMotivoBloqueo('');
-  };
+    const estadoActual = usuarioSeleccionado.estado ? usuarioSeleccionado.estado.toLowerCase() : 'activo';
+    const nuevoEstado = estadoActual === 'activo' ? 'bloqueado' : 'activo';
 
-  // Confirmar reactivación
-  const confirmReactivate = () => {
-    const ahora = new Date().toLocaleString('es-AR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-
-    setUsuarios(usuarios.map(u => 
-      u.id === usuarioSeleccionado.id 
-        ? { 
-            ...u, 
-            estado: 'Activo',
-            fechaBloqueo: null,
-            motivoBloqueo: null
-          } 
-        : u
-    ));
-
-    const nuevaAccion = {
-      id: accionesAdmin.length + 1,
-      tipoAccion: 'Reactivación',
-      usuario: usuarioSeleccionado.nombre,
-      usuarioId: usuarioSeleccionado.id,
-      admin: 'Admin Principal',
-      fecha: ahora,
-      descripcion: `Usuario ${usuarioSeleccionado.nombre} reactivado`
-    };
-    setAccionesAdmin([nuevaAccion, ...accionesAdmin]);
-
-    alert(`Usuario reactivado exitosamente\n\n${usuarioSeleccionado.nombre} puede acceder nuevamente a la plataforma.`);
-    
-    setShowReactivateModal(false);
-  };
-
-  // Filtrar usuarios
-  const usuariosFiltrados = usuarios.filter(u => {
-    let rolMatch = filtroRol === 'Todos';
-    if (filtroRol === 'Prestadores') rolMatch = u.rol === 'Prestador';
-    if (filtroRol === 'Solicitantes') rolMatch = u.rol === 'Solicitante';
-    
-    let estadoMatch = filtroEstado === 'Todos';
-    if (filtroEstado === 'Activos') estadoMatch = u.estado === 'Activo';
-    if (filtroEstado === 'Bloqueados') estadoMatch = u.estado === 'Bloqueado';
-    
-    const busquedaMatch = busqueda === '' || 
-      u.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-      u.email.toLowerCase().includes(busqueda.toLowerCase()) ||
-      u.localidad.toLowerCase().includes(busqueda.toLowerCase());
-    
-    return rolMatch && estadoMatch && busquedaMatch;
-  });
-
-  // Estadísticas
-  const totalUsuarios = usuarios.length;
-  const usuariosActivos = usuarios.filter(u => u.estado === 'Activo').length;
-  const usuariosBloqueados = usuarios.filter(u => u.estado === 'Bloqueado').length;
-  const totalPrestadores = usuarios.filter(u => u.rol === 'Prestador').length;
-  const totalSolicitantes = usuarios.filter(u => u.rol === 'Solicitante').length;
-
-  // Función para renderizar estrellas
-  const renderEstrellas = (calificacion) => {
-    const estrellas = [];
-    const estrellaCompleta = Math.floor(calificacion);
-    const tieneMedia = calificacion % 1 !== 0;
-
-    for (let i = 0; i < estrellaCompleta; i++) {
-      estrellas.push(<i key={`full-${i}`} className="bi bi-star-fill text-warning"></i>);
+    try {
+      await api.put(`/users/update-status/${usuarioSeleccionado.id_usuario}`, {
+        estado: nuevoEstado,
+        motivo: motivoBloqueo
+      });
+      
+      alert(`Usuario ${nuevoEstado} exitosamente.`);
+      setShowBlockModal(false);
+      cargarUsuarios(); // Recargar lista
+    } catch (error) {
+      const msg = error.response?.data?.error || 'Error al actualizar estado.';
+      alert(`Error: ${msg}`);
+      console.error(error);
     }
-    if (tieneMedia) {
-      estrellas.push(<i key="half" className="bi bi-star-half text-warning"></i>);
-    }
-    const estrellasVacias = 5 - Math.ceil(calificacion);
-    for (let i = 0; i < estrellasVacias; i++) {
-      estrellas.push(<i key={`empty-${i}`} className="bi bi-star text-warning"></i>);
-    }
-    return estrellas;
   };
+
+  // Borrar historial completo
+  const handleClearHistorial = async () => {
+    if (!window.confirm('¡ATENCIÓN! \n\n¿Estás seguro de que deseas eliminar TODO el historial de moderación?\nEsta acción no se puede deshacer.')) {
+      return;
+    }
+
+    try {
+      await api.delete('/users/historial/moderacion');
+      alert('Historial eliminado exitosamente.');
+      cargarHistorial();
+    } catch (error) {
+      console.error("Error borrando historial", error);
+      alert('Error al borrar el historial.');
+    }
+  };
+
+  // Renderizado de vistas
+
+  const renderTablaUsuarios = () => (
+    <div className="card main-card">
+      <div className="card-header">
+        <h5><i className="bi bi-people me-2"></i>Gestión de Usuarios</h5>
+      </div>
+      <div className="card-body">
+        {loadingUsers ? <LoadingSpinner /> : (
+          <div className="table-responsive">
+            <table className="table table-hover align-middle">
+              <thead className="table-light">
+                <tr>
+                  <th>Usuario</th>
+                  <th>Email</th>
+                  <th>Rol</th>
+                  <th>Estado</th>
+                  <th className="text-end">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {usuarios.map(u => {
+                  const estadoNormalizado = u.estado ? u.estado.toLowerCase() : 'activo';
+                  const esActivo = estadoNormalizado === 'activo';
+                  
+                  let nombreMostrar = 'Sin nombre';
+                  if (u.cliente && u.cliente.nombre_completo) {
+                      nombreMostrar = u.cliente.nombre_completo;
+                  } else if (u.prestador && u.prestador.nombre_completo) {
+                      nombreMostrar = u.prestador.nombre_completo;
+                  } else if (u.rol?.nombre === 'Administrador') {
+                      nombreMostrar = 'Administrador';
+                  }
+
+                  return (
+                    <tr key={u.id_usuario}>
+                      <td className="fw-bold">{nombreMostrar}</td>
+                      <td>{u.correo}</td>
+                      <td>
+                        <span className="badge bg-secondary">{u.rol?.nombre}</span>
+                      </td>
+                      <td>
+                        <span className={`badge ${esActivo ? 'bg-success' : 'bg-danger'}`}>
+                          {estadoNormalizado.charAt(0).toUpperCase() + estadoNormalizado.slice(1)}
+                        </span>
+                      </td>
+                      <td className="text-end">
+                        <Button 
+                          size="small" 
+                          variant={esActivo ? 'outline-danger' : 'outline-success'}
+                          onClick={() => handleBlockClick(u)}
+                          icon={esActivo ? 'lock' : 'unlock'}
+                        >
+                          {esActivo ? 'Bloquear' : 'Activar'}
+                        </Button>
+                      </td>
+                    </tr>
+                  );
+                })}
+                {usuarios.length === 0 && (
+                  <tr><td colSpan="5" className="text-center py-4 text-muted">No se encontraron usuarios.</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  const renderHistorial = () => (
+    <div className="card main-card">
+      <div className="card-header d-flex justify-content-between align-items-center">
+        <h5 className="mb-0"><i className="bi bi-clock-history me-2"></i>Historial de Moderación</h5>
+        {historial.length > 0 && (
+          <Button 
+            variant="danger" 
+            size="small" 
+            onClick={handleClearHistorial}
+            icon="trash"
+          >
+            Borrar Historial
+          </Button>
+        )}
+      </div>
+      <div className="card-body">
+        {loadingUsers ? <LoadingSpinner /> : (
+          <div className="list-group list-group-flush">
+            {historial.map((h, idx) => (
+              <div key={idx} className="list-group-item px-0 py-3">
+                <div className="d-flex w-100 justify-content-between align-items-center mb-2">
+                  <h6 className="mb-0 text-primary">
+                    <i className={`bi bi-${h.tipo_accion === 'BLOQUEO' ? 'lock-fill' : 'unlock-fill'} me-2`}></i>
+                    {h.tipo_accion}
+                  </h6>
+                  <small className="text-muted">
+                    {h.fecha_hora ? new Date(h.fecha_hora).toLocaleString() : 'Fecha desconocida'}
+                  </small>
+                </div>
+                
+                <div className="row">
+                  <div className="col-md-6">
+                    <small className="d-block text-muted">Usuario Afectado:</small>
+                    <strong>{h.usuario_afectado?.correo || 'Usuario eliminado'}</strong>
+                  </div>
+                  <div className="col-md-6">
+                    <small className="d-block text-muted">Moderador:</small>
+                    <span>{h.admin?.correo || 'Sistema'}</span>
+                  </div>
+                </div>
+                
+                <div className="mt-2 p-2 bg-light rounded border-start border-3 border-warning">
+                  <small className="text-muted d-block fw-bold">Motivo/Detalle:</small>
+                  <span className="fst-italic">{h.descripcion || 'Sin descripción'}</span>
+                </div>
+              </div>
+            ))}
+            {historial.length === 0 && (
+              <div className="text-center py-5 text-muted">
+                <i className="bi bi-inbox fs-1 d-block mb-3"></i>
+                Sin registros de moderación.
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
 
   return (
-    <div className="panel-admin-container">
-      {/* HEADER */}
-      <div className="admin-header mb-4">
+    <div className="panel-admin-container p-4 container-fluid">
+      {/* HEADER PRINCIPAL */}
+      <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
         <div>
-          <h2 className="mb-1">
-            <i className="bi bi-shield-check me-2"></i>
-            Panel de Administración
-          </h2>
-          <p className="text-muted mb-0">Gestión de usuarios y moderación de la plataforma</p>
+          <h2 className="mb-1 fw-bold text-dark">Panel de Administración</h2>
+          <p className="text-muted mb-0">Gestión integral de la plataforma OficiosYA</p>
         </div>
-        <div className="header-actions">
+        
+        {/* NAVEGACIÓN */}
+        <div className="btn-group shadow-sm">
           <button 
-            className={`btn ${vistaActual === 'dashboard' ? 'btn-primary' : 'btn-outline-secondary'}`}
-            onClick={() => setVistaActual('dashboard')}
+            className={`btn ${vistaActual==='dashboard'?'btn-primary':'btn-outline-primary'}`} 
+            onClick={()=>setVistaActual('dashboard')}
           >
-            <i className="bi bi-graph-up me-2"></i>
-            Dashboard
+            <i className="bi bi-graph-up me-2 d-none d-sm-inline"></i>Dashboard
           </button>
           <button 
-            className={`btn ${vistaActual === 'usuarios' ? 'btn-primary' : 'btn-outline-secondary'}`}
-            onClick={() => setVistaActual('usuarios')}
+            className={`btn ${vistaActual==='usuarios'?'btn-primary':'btn-outline-primary'}`} 
+            onClick={()=>setVistaActual('usuarios')}
           >
-            <i className="bi bi-people me-2"></i>
-            Usuarios
+            <i className="bi bi-people me-2 d-none d-sm-inline"></i>Usuarios
           </button>
           <button 
-            className={`btn ${vistaActual === 'historial' ? 'btn-primary' : 'btn-outline-secondary'}`}
-            onClick={() => setVistaActual('historial')}
+            className={`btn ${vistaActual==='categorias'?'btn-primary':'btn-outline-primary'}`} 
+            onClick={()=>setVistaActual('categorias')}
           >
-            <i className="bi bi-clock-history me-2"></i>
-            Historial
+            <i className="bi bi-tags me-2 d-none d-sm-inline"></i>Categorías
           </button>
           <button 
-            className={`btn ${vistaActual === 'reportes' ? 'btn-primary' : 'btn-outline-secondary'}`}
-            onClick={() => setVistaActual('reportes')}
+            className={`btn ${vistaActual==='historial'?'btn-primary':'btn-outline-primary'}`} 
+            onClick={()=>setVistaActual('historial')}
           >
-            <i className="bi bi-flag me-2"></i>
-            Reportes
+            <i className="bi bi-clock-history me-2 d-none d-sm-inline"></i>Historial
           </button>
         </div>
       </div>
 
-      {/* ESTADÍSTICAS */}
-      <div className="row mb-4 g-3">
-        <div className="col-md col-sm-6">
-          <div className="stat-card stat-total">
-            <i className="bi bi-people-fill"></i>
-            <div>
-              <h3>{totalUsuarios}</h3>
-              <p>Total Usuarios</p>
-            </div>
-          </div>
-        </div>
-        <div className="col-md col-sm-6">
-          <div className="stat-card stat-activos">
-            <i className="bi bi-check-circle-fill"></i>
-            <div>
-              <h3>{usuariosActivos}</h3>
-              <p>Activos</p>
-            </div>
-          </div>
-        </div>
-        <div className="col-md col-sm-6">
-          <div className="stat-card stat-bloqueados">
-            <i className="bi bi-x-circle-fill"></i>
-            <div>
-              <h3>{usuariosBloqueados}</h3>
-              <p>Bloqueados</p>
-            </div>
-          </div>
-        </div>
-        <div className="col-md col-sm-6">
-          <div className="stat-card stat-prestadores">
-            <i className="bi bi-briefcase-fill"></i>
-            <div>
-              <h3>{totalPrestadores}</h3>
-              <p>Prestadores</p>
-            </div>
-          </div>
-        </div>
-        <div className="col-md col-sm-6">
-          <div className="stat-card stat-solicitantes">
-            <i className="bi bi-person-fill"></i>
-            <div>
-              <h3>{totalSolicitantes}</h3>
-              <p>Solicitantes</p>
-            </div>
-          </div>
-        </div>
+      {/* CONTENIDO DINÁMICO */}
+      <div className="admin-content animate-fade-in">
+        {vistaActual === 'dashboard' && <AdminDashboard />}
+        {vistaActual === 'usuarios' && renderTablaUsuarios()}
+        {vistaActual === 'categorias' && <AdminCategorias />}
+        {vistaActual === 'historial' && renderHistorial()}
       </div>
 
-      {/* VISTA DASHBOARD */}
-      {vistaActual === 'dashboard' && (
-        <AdminDashboard />
-      )}
-
-      {/* VISTA DE USUARIOS */}
-      {vistaActual === 'usuarios' && (
-        <div className="card main-card">
-          <div className="card-header">
-            <h5 className="mb-3">
-              <i className="bi bi-people me-2"></i>
-              Gestión de Usuarios
-            </h5>
-            
-            {/* FILTROS Y BÚSQUEDA */}
-            <div className="filtros-container">
-              {/* Búsqueda */}
-              <ValidatedInput
-                type="text"
-                name="busqueda"
-                placeholder="Buscar por nombre, email o localidad..."
-                value={busqueda}
-                onChange={(e) => setBusqueda(e.target.value)}
-                icon={{ name: "search", position: "left" }}
-                className="mb-3"
-              />
-
-              {/* Filtros */}
-              <div className="filtros-buttons">
-                {/* Filtro Estado */}
-                <div className="btn-group me-2">
-                  <button 
-                    className={`btn btn-sm ${filtroEstado === 'Todos' ? 'btn-primary' : 'btn-outline-secondary'}`}
-                    onClick={() => setFiltroEstado('Todos')}
-                  >
-                    Todos ({totalUsuarios})
-                  </button>
-                  <button 
-                    className={`btn btn-sm ${filtroEstado === 'Activos' ? 'btn-success' : 'btn-outline-secondary'}`}
-                    onClick={() => setFiltroEstado('Activos')}
-                  >
-                    <i className="bi bi-check-circle me-1"></i>
-                    Activos ({usuariosActivos})
-                  </button>
-                  <button 
-                    className={`btn btn-sm ${filtroEstado === 'Bloqueados' ? 'btn-danger' : 'btn-outline-secondary'}`}
-                    onClick={() => setFiltroEstado('Bloqueados')}
-                  >
-                    <i className="bi bi-x-circle me-1"></i>
-                    Bloqueados ({usuariosBloqueados})
-                  </button>
-                </div>
-
-                {/* Filtro Rol */}
-                <div className="btn-group">
-                  <button 
-                    className={`btn btn-sm ${filtroRol === 'Todos' ? 'btn-primary' : 'btn-outline-secondary'}`}
-                    onClick={() => setFiltroRol('Todos')}
-                  >
-                    Todos los roles
-                  </button>
-                  <button 
-                    className={`btn btn-sm ${filtroRol === 'Prestadores' ? 'btn-info' : 'btn-outline-secondary'}`}
-                    onClick={() => setFiltroRol('Prestadores')}
-                  >
-                    <i className="bi bi-briefcase me-1"></i>
-                    Prestadores
-                  </button>
-                  <button 
-                    className={`btn btn-sm ${filtroRol === 'Solicitantes' ? 'btn-secondary' : 'btn-outline-secondary'}`}
-                    onClick={() => setFiltroRol('Solicitantes')}
-                  >
-                    <i className="bi bi-person me-1"></i>
-                    Solicitantes
-                  </button>
-                </div>
+      {/* MODAL DE CONFIRMACIÓN DE BLOQUEO */}
+      {showBlockModal && (
+        <div className="modal d-block" style={{backgroundColor: 'rgba(0,0,0,0.5)'}} tabIndex="-1">
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content shadow">
+              <div className="modal-header bg-light">
+                <h5 className="modal-title fw-bold">
+                  <i className="bi bi-exclamation-triangle-fill text-warning me-2"></i>
+                  Confirmar Acción
+                </h5>
+                <button type="button" className="btn-close" onClick={()=>setShowBlockModal(false)}></button>
               </div>
-            </div>
-          </div>
-
-          {/* LISTA DE USUARIOS */}
-          <div className="card-body p-0">
-            {usuariosFiltrados.length > 0 ? (
-              <div className="usuarios-lista">
-                {usuariosFiltrados.map(user => (
-                  <div key={user.id} className="usuario-item">
-                    <div className="usuario-info">
-                      {/* Avatar */}
-                      <div className="usuario-avatar">
-                        {user.nombre.charAt(0)}
-                      </div>
-
-                      {/* Datos principales */}
-                      <div className="usuario-datos">
-                        <div className="usuario-nombre-badges">
-                          <h6>{user.nombre}</h6>
-                          <div className="badges-group">
-                            <span className={`badge ${user.rol === 'Prestador' ? 'bg-info' : 'bg-secondary'}`}>
-                              <i className={`bi bi-${user.rol === 'Prestador' ? 'briefcase' : 'person'} me-1`}></i>
-                              {user.rol}
-                            </span>
-                            <span className={`badge ${user.estado === 'Activo' ? 'bg-success' : 'bg-danger'}`}>
-                              <i className={`bi bi-${user.estado === 'Activo' ? 'check-circle' : 'x-circle'} me-1`}></i>
-                              {user.estado}
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className="usuario-detalles">
-                          <span>
-                            <i className="bi bi-envelope"></i>
-                            {user.email}
-                          </span>
-                          <span>
-                            <i className="bi bi-geo-alt"></i>
-                            {user.localidad}
-                          </span>
-                          <span>
-                            <i className="bi bi-calendar3"></i>
-                            Registro: {user.fechaRegistro}
-                          </span>
-                          <span>
-                            <i className="bi bi-clock"></i>
-                            Último acceso: {user.ultimoAcceso}
-                          </span>
-                        </div>
-
-                        {/* Info adicional según rol */}
-                        {user.rol === 'Prestador' && (
-                          <div className="usuario-extra">
-                            <span className="badge bg-light text-dark">
-                              <i className="bi bi-briefcase me-1"></i>
-                              {user.trabajos} trabajos realizados
-                            </span>
-                            {user.calificacion && (
-                              <span className="badge bg-light text-dark">
-                                {renderEstrellas(user.calificacion)}
-                                <span className="ms-1">{user.calificacion}</span>
-                              </span>
-                            )}
-                            {user.categorias && user.categorias.map(cat => (
-                              <span key={cat} className="badge bg-primary">{cat}</span>
-                            ))}
-                          </div>
-                        )}
-
-                        {user.rol === 'Solicitante' && (
-                          <div className="usuario-extra">
-                            <span className="badge bg-light text-dark">
-                              <i className="bi bi-file-text me-1"></i>
-                              {user.solicitudes} solicitudes creadas
-                            </span>
-                          </div>
-                        )}
-
-                        {/* Info de bloqueo */}
-                        {user.estado === 'Bloqueado' && user.motivoBloqueo && (
-                          <div className="alert alert-danger mt-2 mb-0 py-2 px-3">
-                            <small>
-                              <strong>Bloqueado el {user.fechaBloqueo}:</strong> {user.motivoBloqueo}
-                            </small>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Acciones */}
-                    <div className="usuario-acciones">
-                      <Button 
-                        variant="outline-secondary" 
-                        size="small"
-                        onClick={() => verDetalles(user)}
-                        icon="eye"
-                      >
-                        Ver Detalles
-                      </Button>
-                      {user.estado === 'Activo' ? (
-                        <Button 
-                          variant="danger" 
-                          size="small"
-                          onClick={() => handleBlockClick(user)}
-                          icon="lock"
-                        >
-                          Bloquear
-                        </Button>
-                      ) : (
-                        <Button 
-                          variant="success" 
-                          size="small"
-                          onClick={() => handleReactivateClick(user)}
-                          icon="unlock"
-                        >
-                          Reactivar
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-5">
-                <i className="bi bi-inbox fs-1 text-muted d-block mb-3"></i>
-                <h5 className="text-muted">No se encontraron usuarios</h5>
-                <p className="text-muted">Intenta con otros filtros o búsqueda</p>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* VISTA DE HISTORIAL */}
-      {vistaActual === 'historial' && (
-        <div className="card main-card">
-          <div className="card-header">
-            <h5>
-              <i className="bi bi-clock-history me-2"></i>
-              Historial de Acciones Administrativas
-            </h5>
-            <p className="text-muted mb-0">Registro completo de todas las acciones de moderación</p>
-          </div>
-          <div className="card-body">
-            {accionesAdmin.length > 0 ? (
-              <div className="timeline">
-                {accionesAdmin.map(accion => (
-                  <div key={accion.id} className="timeline-item">
-                    <div className={`timeline-badge ${accion.tipoAccion === 'Bloqueo' ? 'bg-danger' : 'bg-success'}`}>
-                      <i className={`bi bi-${accion.tipoAccion === 'Bloqueo' ? 'lock' : 'unlock'}`}></i>
-                    </div>
-                    <div className="timeline-content">
-                      <div className="timeline-header">
-                        <h6 className="mb-1">
-                          {accion.tipoAccion === 'Bloqueo' ? '🔒 Usuario Bloqueado' : '🔓 Usuario Reactivado'}
-                        </h6>
-                        <small className="text-muted">{accion.fecha}</small>
-                      </div>
-                      <p className="mb-1"><strong>Usuario:</strong> {accion.usuario}</p>
-                      <p className="mb-1"><strong>Administrador:</strong> {accion.admin}</p>
-                      {accion.descripcion && (
-                        <p className="mb-0 text-muted">
-                          <i className="bi bi-info-circle me-1"></i>
-                          {accion.descripcion}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-5">
-                <i className="bi bi-clock-history fs-1 text-muted d-block mb-3"></i>
-                <h5 className="text-muted">No hay acciones registradas</h5>
-                <p className="text-muted">Las acciones administrativas aparecerán aquí</p>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* VISTA DE REPORTES */}
-      {vistaActual === 'reportes' && (
-        <AdminReportes />
-      )}
-
-      {/* MODAL BLOQUEAR USUARIO - */}
-      {showBlockModal && usuarioSeleccionado && (
-        <>
-          <div className="modal-backdrop show"></div>
-          <div className="modal show d-block">
-            <div className="modal-dialog modal-dialog-centered">
-              <div className="modal-content">
-                <div className="modal-header bg-danger text-white">
-                  <h5 className="modal-title">
-                    <i className="bi bi-lock me-2"></i>
-                    Bloquear Usuario
-                  </h5>
-                  <button 
-                    type="button" 
-                    className="btn-close btn-close-white" 
-                    onClick={() => setShowBlockModal(false)}
-                  ></button>
-                </div>
-                <div className="modal-body">
-                  <div className="alert alert-warning">
-                    <i className="bi bi-exclamation-triangle me-2"></i>
-                    <strong>¿Estás seguro?</strong>
-                  </div>
-
-                  <div className="usuario-info-modal mb-3">
-                    <strong>Usuario:</strong> {usuarioSeleccionado.nombre}<br/>
-                    <strong>Email:</strong> {usuarioSeleccionado.email}<br/>
-                    <strong>Rol:</strong> {usuarioSeleccionado.rol}
-                  </div>
-
+              <div className="modal-body p-4">
+                <p className="fs-5 mb-3">
+                  ¿Deseas cambiar el estado de <br/>
+                  <strong className="text-primary">{usuarioSeleccionado?.correo}</strong>?
+                </p>
+                <div className="mb-3">
                   <ValidatedInput
-                    as="textarea"
-                    name="motivoBloqueo"
-                    label="Motivo del bloqueo (opcional)"
-                    rows={3}
+                    label="Motivo de la acción (Obligatorio para el historial)"
                     value={motivoBloqueo}
                     onChange={(e) => setMotivoBloqueo(e.target.value)}
-                    placeholder="Describe el motivo del bloqueo..."
+                    as="textarea"
+                    rows={3}
+                    placeholder="Ej: Comportamiento indebido, solicitud del usuario, etc."
+                    className="mb-0"
                   />
-
-                  <div className="alert alert-danger mb-0">
-                    <small>
-                      <i className="bi bi-info-circle me-2"></i>
-                      El usuario no podrá acceder a la plataforma hasta que sea reactivado por un administrador.
-                    </small>
-                  </div>
                 </div>
-                <div className="modal-footer">
-                  <Button 
-                    variant="secondary"
-                    onClick={() => setShowBlockModal(false)}
-                  >
-                    Cancelar
-                  </Button>
-                  <Button 
-                    variant="danger"
-                    onClick={confirmBlock}
-                    icon="lock"
-                  >
-                    Confirmar Bloqueo
-                  </Button>
+                <div className="alert alert-info py-2 small mb-0">
+                  <i className="bi bi-info-circle me-1"></i>
+                  Esta acción quedará registrada en el historial.
                 </div>
+              </div>
+              <div className="modal-footer bg-light">
+                <Button variant="secondary" onClick={()=>setShowBlockModal(false)}>Cancelar</Button>
+                <Button 
+                  variant="primary" 
+                  onClick={confirmBlock} 
+                  disabled={!motivoBloqueo.trim()} // Validar que no esté vacío
+                >
+                  Confirmar Cambio
+                </Button>
               </div>
             </div>
           </div>
-        </>
-      )}
-
-      {/* MODAL REACTIVAR USUARIO */}
-      {showReactivateModal && usuarioSeleccionado && (
-        <>
-          <div className="modal-backdrop show"></div>
-          <div className="modal show d-block">
-            <div className="modal-dialog modal-dialog-centered">
-              <div className="modal-content">
-                <div className="modal-header bg-success text-white">
-                  <h5 className="modal-title">
-                    <i className="bi bi-unlock me-2"></i>
-                    Reactivar Usuario
-                  </h5>
-                  <button 
-                    type="button" 
-                    className="btn-close btn-close-white" 
-                    onClick={() => setShowReactivateModal(false)}
-                  ></button>
-                </div>
-                <div className="modal-body">
-                  <div className="alert alert-info">
-                    <i className="bi bi-info-circle me-2"></i>
-                    <strong>¿Deseas reactivar este usuario?</strong>
-                  </div>
-
-                  <div className="usuario-info-modal mb-3">
-                    <strong>Usuario:</strong> {usuarioSeleccionado.nombre}<br/>
-                    <strong>Email:</strong> {usuarioSeleccionado.email}<br/>
-                    <strong>Rol:</strong> {usuarioSeleccionado.rol}
-                  </div>
-
-                  {usuarioSeleccionado.motivoBloqueo && (
-                    <div className="alert alert-warning mb-3">
-                      <strong>Motivo del bloqueo anterior:</strong><br/>
-                      {usuarioSeleccionado.motivoBloqueo}
-                    </div>
-                  )}
-
-                  <div className="alert alert-success mb-0">
-                    <small>
-                      <i className="bi bi-check-circle me-2"></i>
-                      El usuario volverá a tener acceso completo a la plataforma.
-                    </small>
-                  </div>
-                </div>
-                <div className="modal-footer">
-                  <Button 
-                    variant="secondary"
-                    onClick={() => setShowReactivateModal(false)}
-                  >
-                    Cancelar
-                  </Button>
-                  <Button 
-                    variant="success"
-                    onClick={confirmReactivate}
-                    icon="unlock"
-                  >
-                    Confirmar Reactivación
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </>
-      )}
-
-      {/* MODAL DETALLES DEL USUARIO */}
-      {showDetalleModal && usuarioSeleccionado && (
-        <>
-          <div className="modal-backdrop show"></div>
-          <div className="modal show d-block">
-            <div className="modal-dialog modal-lg modal-dialog-centered">
-              <div className="modal-content">
-                <div className="modal-header">
-                  <h5 className="modal-title">
-                    <i className="bi bi-person-lines-fill me-2"></i>
-                    Detalles del Usuario
-                  </h5>
-                  <button 
-                    type="button" 
-                    className="btn-close" 
-                    onClick={() => setShowDetalleModal(false)}
-                  ></button>
-                </div>
-                <div className="modal-body">
-                  <div className="usuario-detalle-info">
-                    <h6>Información Básica</h6>
-                    <p><strong>Nombre:</strong> {usuarioSeleccionado.nombre}</p>
-                    <p><strong>Email:</strong> {usuarioSeleccionado.email}</p>
-                    <p><strong>Rol:</strong> {usuarioSeleccionado.rol}</p>
-                    <p><strong>Estado:</strong> {usuarioSeleccionado.estado}</p>
-                    <p><strong>Localidad:</strong> {usuarioSeleccionado.localidad}</p>
-                    <p><strong>Fecha de Registro:</strong> {usuarioSeleccionado.fechaRegistro}</p>
-                    <p><strong>Último Acceso:</strong> {usuarioSeleccionado.ultimoAcceso}</p>
-                  </div>
-
-                  {usuarioSeleccionado.rol === 'Prestador' && (
-                    <div className="usuario-detalle-info mt-4">
-                      <h6>Información del Prestador</h6>
-                      <p><strong>Trabajos Realizados:</strong> {usuarioSeleccionado.trabajos}</p>
-                      {usuarioSeleccionado.calificacion && (
-                        <p>
-                          <strong>Calificación:</strong> {renderEstrellas(usuarioSeleccionado.calificacion)} ({usuarioSeleccionado.calificacion})
-                        </p>
-                      )}
-                      {usuarioSeleccionado.categorias && (
-                        <p>
-                          <strong>Categorías:</strong> {usuarioSeleccionado.categorias.join(', ')}
-                        </p>
-                      )}
-                    </div>
-                  )}
-
-                  {usuarioSeleccionado.rol === 'Solicitante' && (
-                    <div className="usuario-detalle-info mt-4">
-                      <h6>Información del Solicitante</h6>
-                      <p><strong>Solicitudes Creadas:</strong> {usuarioSeleccionado.solicitudes}</p>
-                    </div>
-                  )}
-
-                  {usuarioSeleccionado.estado === 'Bloqueado' && (
-                    <div className="usuario-detalle-info mt-4">
-                      <h6>Información de Bloqueo</h6>
-                      <p><strong>Fecha de Bloqueo:</strong> {usuarioSeleccionado.fechaBloqueo}</p>
-                      <p><strong>Motivo del Bloqueo:</strong> {usuarioSeleccionado.motivoBloqueo}</p>
-                    </div>
-                  )}
-                </div>
-                <div className="modal-footer">
-                  <Button 
-                    variant="secondary"
-                    onClick={() => setShowDetalleModal(false)}
-                  >
-                    Cerrar
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </>
+        </div>
       )}
     </div>
   );
