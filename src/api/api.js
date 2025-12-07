@@ -10,8 +10,28 @@ export const api = axios.create({
   },
 });
 
-// Interceptor para agregar token automáticamente
+// Instancia separada para uploads sin Content-Type fijo
+export const uploadApi = axios.create({
+  baseURL: API_BASE_URL,
+  timeout: 30000, // Más timeout para uploads
+});
+
+// Interceptor para agregar token automáticamente a api
 api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Interceptor para agregar token automáticamente a uploadApi
+uploadApi.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
     if (token) {
@@ -262,11 +282,7 @@ export const prestadorService = {
   // Subir imágenes
   uploadImages: async (prestadorId, formData) => {
     try {
-      const response = await api.post(`/prestadores/${prestadorId}/images`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      const response = await uploadApi.post(`/prestadores/${prestadorId}/images`, formData);
       return response.data;
     } catch (error) {
       throw error.response?.data || { message: 'Error al subir imágenes' };
@@ -274,25 +290,25 @@ export const prestadorService = {
   }
 };
 
-// Servicios de clientes
-export const clienteService = {
-  // Crear perfil de cliente
-  createProfile: async (clienteData) => {
+// Servicios de imágenes
+export const imageService = {
+  // Subir imagen de prestador
+  uploadPrestadorImage: async (formData) => {
     try {
-      const response = await api.post('/clientes', clienteData);
+      const response = await uploadApi.post('/images/upload/prestador', formData);
       return response.data;
     } catch (error) {
-      throw error.response?.data || { message: 'Error al crear perfil de cliente' };
+      throw error.response?.data || { message: 'Error al subir imagen de prestador' };
     }
   },
 
-  // Actualizar perfil de cliente
-  updateProfile: async (clienteId, clienteData) => {
+  // Subir imagen de solicitud
+  uploadSolicitudImage: async (formData) => {
     try {
-      const response = await api.put(`/clientes/${clienteId}`, clienteData);
+      const response = await uploadApi.post('/images/upload/solicitud', formData);
       return response.data;
     } catch (error) {
-      throw error.response?.data || { message: 'Error al actualizar perfil' };
+      throw error.response?.data || { message: 'Error al subir imagen de solicitud' };
     }
   }
 };
