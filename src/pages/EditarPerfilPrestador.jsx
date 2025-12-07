@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, ValidatedInput } from '../components/common';
+import { uploadApi } from '../api/api';
 import '../styles/pages/EditarPerfilPrestador.css';
 
 const categoriasDisponibles = [
@@ -200,16 +201,46 @@ function EditarPerfilPrestador() {
   };
 
   // Guardar cambios
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     const erroresValidacion = validarFormulario();
     setErrores(erroresValidacion);
 
-    if (Object.keys(erroresValidacion).length === 0) {
+    if (Object.keys(erroresValidacion).length > 0) {
+      return;
+    }
+
+    try {
+      // Primero subir imágenes si hay
+      if (formData.imagenes && formData.imagenes.length > 0) {
+        const formDataImages = new FormData();
+        
+        // Agregar ID del prestador (esto debería venir del contexto de autenticación)
+        const prestadorId = localStorage.getItem('userId') || '1'; // Temporal, debería venir del auth context
+        formDataImages.append('prestadorId', prestadorId);
+        
+        // Agregar cada imagen con el nombre de campo 'imagen'
+        formData.imagenes.forEach((file, index) => {
+          formDataImages.append('imagen', file);
+        });
+
+        const response = await uploadApi.post('/images/upload/prestador', formDataImages);
+        
+        if (response.data.success) {
+          console.log('Imágenes subidas:', response.data.data);
+        } else {
+          throw new Error('Error al subir imágenes');
+        }
+      }
+
+      // Aquí iría la lógica para actualizar otros datos del perfil
       console.log('Perfil actualizado:', formData);
       alert('✅ Perfil actualizado correctamente.');
       navigate('/panel-prestador');
+    } catch (error) {
+      console.error('Error al guardar perfil:', error);
+      alert('❌ Error al guardar los cambios. Intente nuevamente.');
     }
   };
 
@@ -300,6 +331,40 @@ function EditarPerfilPrestador() {
                 error={errores.descripcion}
                 helperText={`Mínimo 20 caracteres. Actual: ${formData.descripcion.length}`}
               />
+            </div>
+          </div>
+        </div>
+
+        {/* IMÁGENES DEL PERFIL */}
+        <div className="card mb-4">
+          <div className="card-header">
+            <i className="bi bi-images me-2"></i>
+            Imágenes del Perfil
+          </div>
+          <div className="card-body">
+            <div className="mb-3">
+              <label htmlFor="imagenes" className="form-label">
+                Subir Imágenes <span className="text-muted">(máximo 5, JPG/PNG, 5MB cada una)</span>
+              </label>
+              <input
+                type="file"
+                className={`form-control ${errores.imagenes ? 'is-invalid' : ''}`}
+                id="imagenes"
+                name="imagenes"
+                multiple
+                accept="image/jpeg,image/jpg,image/png"
+                onChange={handleImagenesChange}
+              />
+              {errores.imagenes && (
+                <div className="invalid-feedback">{errores.imagenes}</div>
+              )}
+              {formData.imagenes && formData.imagenes.length > 0 && (
+                <div className="mt-2">
+                  <small className="text-success">
+                    {formData.imagenes.length} imagen(es) seleccionada(s)
+                  </small>
+                </div>
+              )}
             </div>
           </div>
         </div>
