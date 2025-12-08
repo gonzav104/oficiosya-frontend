@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom';
 import React, { useState } from 'react';
 import { Button, ValidatedInput } from '../components/common';
-import { uploadApi } from '../api/api';
 import '../styles/pages/PanelSolicitante.css';
 
 // Datos de Ejemplo
@@ -156,8 +155,8 @@ function PanelSolicitante() {
     const files = Array.from(e.target.files);
     const nuevosErrores = {};
 
-    if (files.length > 5) {
-      nuevosErrores.imagenes = 'Máximo 5 imágenes permitidas';
+    if (files.length > 3) {
+      nuevosErrores.imagenes = 'Máximo 3 imágenes permitidas';
       setErrores(prev => ({ ...prev, ...nuevosErrores }));
       return;
     }
@@ -217,48 +216,21 @@ function PanelSolicitante() {
     return Object.keys(nuevosErrores).length === 0;
   };
 
-  const handleGuardarSolicitud = async (e) => {
+  const handleGuardarSolicitud = (e) => {
     e.preventDefault();
 
     if (validarFormulario()) {
-      try {
-        // Subir imágenes si hay
-        if (formData.imagenes && formData.imagenes.length > 0) {
-          const formDataImages = new FormData();
-          
-          // ID de solicitud (esto debería venir de la creación de solicitud)
-          const solicitudId = '4'; // Temporal para testing
-          formDataImages.append('id_solicitud', solicitudId);
-          
-          // Agregar cada imagen con el nombre de campo 'imagen'
-          formData.imagenes.forEach((file, index) => {
-            formDataImages.append('imagen', file);
-          });
-
-          const response = await uploadApi.post('/images/upload/solicitud', formDataImages);
-          
-          if (response.data.success) {
-            console.log('Imágenes subidas:', response.data.data);
-          } else {
-            throw new Error('Error al subir imágenes');
-          }
-        }
-
-        console.log("Nueva solicitud guardada:", formData);
-        alert('Solicitud creada correctamente.');
-        setFormData({
-          titulo: '',
-          categoria: '',
-          localidad: '',
-          descripcion: '',
-          imagenes: []
-        });
-        setErrores({});
-        setShowModal(false);
-      } catch (error) {
-        console.error('Error al guardar solicitud:', error);
-        alert('❌ Error al guardar la solicitud. Intente nuevamente.');
-      }
+      console.log("Nueva solicitud guardada:", formData);
+      alert('Solicitud creada correctamente.');
+      setFormData({
+        titulo: '',
+        categoria: '',
+        localidad: '',
+        descripcion: '',
+        imagenes: []
+      });
+      setErrores({});
+      setShowModal(false);
     }
   };
 
