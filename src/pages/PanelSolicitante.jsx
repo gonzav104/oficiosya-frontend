@@ -155,23 +155,22 @@ function PanelSolicitante() {
     const files = Array.from(e.target.files);
     const nuevosErrores = {};
 
-    if (files.length > 3) {
-      nuevosErrores.imagenes = 'Máximo 3 imágenes permitidas';
+    if (files.length > 1) {
+      nuevosErrores.imagenes = 'Máximo 1 imagen permitida';
       setErrores(prev => ({ ...prev, ...nuevosErrores }));
       return;
     }
 
     const archivosValidos = [];
-    for (let file of files) {
+    if (files.length === 1) {
+      const file = files[0];
       if (file.size > 5 * 1024 * 1024) {
-        nuevosErrores.imagenes = 'Cada imagen debe pesar menos de 5MB';
-        break;
-      }
-      if (!['image/jpeg', 'image/jpg', 'image/png'].includes(file.type)) {
+        nuevosErrores.imagenes = 'La imagen debe pesar menos de 5MB';
+      } else if (!['image/jpeg', 'image/jpg', 'image/png'].includes(file.type)) {
         nuevosErrores.imagenes = 'Solo se permiten archivos JPG, JPEG y PNG';
-        break;
+      } else {
+        archivosValidos.push(file);
       }
-      archivosValidos.push(file);
     }
 
     if (Object.keys(nuevosErrores).length > 0) {
@@ -460,7 +459,6 @@ function PanelSolicitante() {
                         type="file" 
                         id="imagenes"
                         onChange={handleImageChange}
-                        multiple 
                         accept=".jpg,.jpeg,.png"
                       />
                       {errores.imagenes && <div className="invalid-feedback d-block">{errores.imagenes}</div>}

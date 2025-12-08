@@ -3,21 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { Button, ValidatedInput } from '../components/common';
 import '../styles/pages/EditarPerfilPrestador.css';
 
-const categoriasDisponibles = [
-  'Plomería',
-  'Electricidad',
-  'Pintura',
-  'Carpintería',
-  'Albañilería',
-  'Gasista',
-  'Herrería',
-  'Jardinería',
-  'Techista',
-  'Limpieza',
-  'Refrigeración',
-  'Aire Acondicionado'
-];
-
 function EditarPerfilPrestador() {
   const navigate = useNavigate();
   const [errores, setErrores] = useState({});
@@ -56,15 +41,6 @@ function EditarPerfilPrestador() {
     setFormData(datosExistentes);
   }, []);
 
-  // Estado para búsqueda de categorías
-  const [busquedaCategoria, setBusquedaCategoria] = useState('');
-
-  const sugerenciasFiltradas = categoriasDisponibles.filter(
-    cat => 
-      cat.toLowerCase().includes(busquedaCategoria.toLowerCase()) && 
-      !formData.categorias.includes(cat)
-  );
-
   // Manejo de cambios en inputs
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -77,68 +53,6 @@ function EditarPerfilPrestador() {
       setErrores(prev => ({
         ...prev,
         [name]: null
-      }));
-    }
-  };
-
-  const agregarCategoria = (categoria) => {
-    if (!formData.categorias.includes(categoria)) {
-      setFormData(prev => ({
-        ...prev,
-        categorias: [...prev.categorias, categoria]
-      }));
-      setBusquedaCategoria('');
-      if (errores.categorias) {
-        setErrores(prev => ({
-          ...prev,
-          categorias: null
-        }));
-      }
-    }
-  };
-
-  const removerCategoria = (categoria) => {
-    setFormData(prev => ({
-      ...prev,
-      categorias: prev.categorias.filter(c => c !== categoria)
-    }));
-  };
-
-  const handleImagenesChange = (e) => {
-    const files = Array.from(e.target.files);
-    const nuevosErrores = {};
-
-    if (files.length > 5) {
-      nuevosErrores.imagenes = 'Máximo 5 imágenes permitidas';
-      setErrores(prev => ({ ...prev, ...nuevosErrores }));
-      e.target.value = '';
-      return;
-    }
-
-    const archivosValidos = [];
-    for (let file of files) {
-      if (file.size > 5 * 1024 * 1024) {
-        nuevosErrores.imagenes = 'Cada imagen debe pesar menos de 5MB';
-        break;
-      }
-      if (!['image/jpeg', 'image/jpg', 'image/png'].includes(file.type)) {
-        nuevosErrores.imagenes = 'Solo se permiten archivos JPG, JPEG y PNG';
-        break;
-      }
-      archivosValidos.push(file);
-    }
-
-    if (Object.keys(nuevosErrores).length > 0) {
-      setErrores(prev => ({ ...prev, ...nuevosErrores }));
-      e.target.value = '';
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        imagenes: archivosValidos
-      }));
-      setErrores(prev => ({
-        ...prev,
-        imagenes: null
       }));
     }
   };

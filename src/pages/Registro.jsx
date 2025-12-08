@@ -797,11 +797,10 @@ if (loadingData) {
                   type="file" 
                   id="imagenes"
                   onChange={handleImagenesChange}
-                  multiple 
                   accept=".jpg,.jpeg,.png"
                 />
                 <small className="text-muted d-block mt-1">
-                  Máximo 5 imágenes. JPG, JPEG, PNG. Máximo 5MB cada una.
+                  Máximo 1 imagen. JPG, JPEG, PNG. Máximo 5MB cada una.
                 </small>
                 {errores.imagenes && (
                   <div className="invalid-feedback d-block">{errores.imagenes}</div>
