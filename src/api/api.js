@@ -33,7 +33,6 @@ api.interceptors.response.use(
     // Si el token expiró, redirigir al login
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
-      localStorage.removeItem('user');
       window.location.href = '/login';
     }
     return Promise.reject(error);
@@ -71,12 +70,6 @@ export const authService = {
       
       const response = await api.post('/auth/register', registerData);
       
-      // Guardar token y datos del usuario si se proporcionan
-      if (response.data.token) {
-        localStorage.setItem('token', response.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.usuario));
-      }
-      
       return response.data;
     } catch (error) {
       throw error.response?.data || { message: 'Error en el registro' };
@@ -93,17 +86,7 @@ export const authService = {
         contrasena 
       });
       
-      // Manejo estandarizado de respuestas
-      const responseData = response.data;
-      const token = responseData.data?.token || responseData.token;
-      const user = responseData.data?.user || responseData.usuario;
-      
-      if (token) {
-        localStorage.setItem('token', token);
-        localStorage.setItem('user', JSON.stringify(user));
-      }
-      
-      return responseData;
+      return response.data;
     } catch (error) {
       throw error.response?.data || { error: 'Error en el login' };
     }
@@ -116,9 +99,7 @@ export const authService = {
     } catch (error) {
       // Error en logout - continuar con limpieza local
     } finally {
-      // Limpiar datos locales siempre
       localStorage.removeItem('token');
-      localStorage.removeItem('user');
     }
   },
 
@@ -126,7 +107,7 @@ export const authService = {
   forgotPassword: async (email) => {
     try {
       const response = await api.post('/auth/forgot-password', { 
-        correo: email  // El backend espera 'correo', no 'email'
+        correo: email
       });
       return response.data;
     } catch (error) {

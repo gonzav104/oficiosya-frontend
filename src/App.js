@@ -15,6 +15,7 @@ import EditarPerfilPrestador from "./pages/EditarPerfilPrestador";
 import PanelAdmin from "./pages/PanelAdmin";
 import PoliticaPrivacidad from "./pages/PoliticaPrivacidad";
 import TerminosUso from "./pages/TerminosUso";
+import SetupAdmin from './pages/SetupAdmin';
 
 function AppContent() {
   const location = useLocation();
@@ -35,6 +36,9 @@ function AppContent() {
           <Route path="/recuperar-contrasena" element={<RecuperarContrasena />} />
           <Route path="/politica-privacidad" element={<PoliticaPrivacidad />} />
           <Route path="/terminos-uso" element={<TerminosUso />} />
+
+          {/* Ruta de setup inicial de admin */}
+          <Route path="/setup-admin" element={<SetupAdmin />} />
           
           {/* Rutas protegidas para solicitantes */}
           <Route 

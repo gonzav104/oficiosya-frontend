@@ -74,8 +74,8 @@ export const PROVINCIAS_ARGENTINA = [
 // Límites y validaciones
 export const VALIDATION_LIMITS = {
   // Archivos e imágenes
-  MAX_IMAGES_SOLICITUD: 3,
-  MAX_IMAGES_PRESTADOR: 5,
+  MAX_IMAGES_SOLICITUD: 1,
+  MAX_IMAGES_PRESTADOR: 1,
   MAX_FILE_SIZE_MB: 5,
   MAX_FILE_SIZE_BYTES: 5 * 1024 * 1024, // 5MB en bytes
   

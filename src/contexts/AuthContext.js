@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { jwtDecode } from 'jwt-decode';
 import { authService } from '../api/api';
 
 const AuthContext = createContext();
@@ -19,19 +20,16 @@ export const AuthProvider = ({ children }) => {
   // Verificar si hay token al cargar la aplicación
   useEffect(() => {
     const initAuth = async () => {
-      const token = localStorage.getItem('token');
-      const userData = localStorage.getItem('user');
+      localStorage.removeItem('user'); // Limpiar datos antiguos
 
-      if (token && userData) {
+      const token = localStorage.getItem('token');
+      if (token) {
         try {
-          // Verificar que el token sea válido
-          await authService.verifyToken();
-          setUser(JSON.parse(userData));
+          const decoded = jwtDecode(token);
+          setUser(decoded);
           setIsAuthenticated(true);
         } catch (error) {
-          // Si el token no es válido, limpiar datos
           localStorage.removeItem('token');
-          localStorage.removeItem('user');
           setUser(null);
           setIsAuthenticated(false);
         }
@@ -47,16 +45,17 @@ export const AuthProvider = ({ children }) => {
     try {
       setLoading(true);
       const response = await authService.login(correo, contrasena);
-      
-      // Usar nombres estandarizados de respuesta
-      const user = response.data?.user || response.usuario || response.user;
-      setUser(user);
+
+      //Almacenar solo token
+      const token = response.data?.token || response.token;
+      localStorage.setItem('token', token);
+
+      // Decodificar para setear usuario
+      const decoded = jwtDecode(token);
+      setUser(decoded);
       setIsAuthenticated(true);
       
-      return {
-        ...response,
-        user: user  
-      };
+      return response;
     } catch (error) {
       setUser(null);
       setIsAuthenticated(false);
@@ -79,18 +78,12 @@ export const AuthProvider = ({ children }) => {
       
       const response = await authService.register(dataWithType);
       
-      // Si el registro es exitoso y hay token, actualizar estado automáticamente
-      if (response.usuario && response.token) {
-        setUser(response.usuario);
-        setIsAuthenticated(true);
+      // Si el registro devuelve un token, manejarlo igual que en el login
+      if (response.token) {
         localStorage.setItem('token', response.token);
-        localStorage.setItem('user', JSON.stringify(response.usuario));
-        return response;
-      }
-      
-      // Si no hay token pero hay usuario, el registro fue exitoso pero requiere login manual
-      if (response.usuario) {
-        return response;
+        const decoded = jwtDecode(response.token);
+        setUser(decoded);
+        setIsAuthenticated(true);
       }
       
       return response;
@@ -111,22 +104,19 @@ export const AuthProvider = ({ children }) => {
     try {
       await authService.logout();
     } catch (error) {
-      // Error en logout - continuar con limpieza local
+      // Error en logout, continuar con limpieza local
     } finally {
       // Limpiar estado local
       setUser(null);
-      setIsAuthenticated(false);
-      
+      setIsAuthenticated(false);     
       // Limpiar datos del localStorage
       localStorage.removeItem('token');
-      localStorage.removeItem('user');
     }
   };
 
   // Actualizar datos del usuario
   const updateUser = (newUserData) => {
     setUser(newUserData);
-    localStorage.setItem('user', JSON.stringify(newUserData));
   };
 
   const value = {

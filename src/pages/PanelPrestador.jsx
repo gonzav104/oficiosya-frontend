@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button, ValidatedInput } from '../components/common';
+import { useAuth } from '../contexts/AuthContext';
 import '../styles/pages/PanelPrestador.css';
 
 // Datos de Ejemplo
@@ -68,6 +69,8 @@ const solicitudesRecibidas = [
 // ----------------------------------------------------
 
 function PanelPrestador() {
+  const { user } = useAuth();
+
   const [filtro, setFiltro] = useState('Pendiente');
   const [solicitudSeleccionada, setSolicitudSeleccionada] = useState(null);
   const [mostrarModalPresupuesto, setMostrarModalPresupuesto] = useState(false);
@@ -183,6 +186,7 @@ function PanelPrestador() {
             Panel de Prestador
           </h2>
           <p className="text-muted mb-0">Gestiona las solicitudes de presupuesto que recibes</p>
+          {user && <p className="text-primary fw-bold">Bienvenido, {user.nombre_completo}</p>}
         </div>
         <Button 
           as={Link} 
