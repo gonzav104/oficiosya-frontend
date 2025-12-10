@@ -374,3 +374,46 @@
     padding: 1.5rem;
   }
 }
+
+/* ===== AJUSTES ADICIONALES: Monto y Contactos ===== */
+.monto-valor {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #0b6b3a;
+}
+
+.contacto-box-aceptado {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.contacto-box-aceptado .contact-left {
+  text-align: left;
+}
+
+.contacto-box-aceptado .contact-right {
+  text-align: right;
+}
+
+.whatsapp-btn {
+  padding: 0.6rem 1rem;
+  font-weight: 700;
+  border-radius: 8px;
+}
+
+@media (max-width: 576px) {
+  .monto-valor {
+    font-size: 1.45rem;
+  }
+  .contacto-box-aceptado {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .contacto-box-aceptado .contact-right {
+    width: 100%;
+    margin-top: 0.75rem;
+    text-align: left;
+  }
+}

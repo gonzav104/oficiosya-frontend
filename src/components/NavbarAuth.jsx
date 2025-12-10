@@ -14,35 +14,37 @@ function NavbarAuth() {
   const [mostrarDropdown, setMostrarDropdown] = useState(false);
 
   // Simulación de notificaciones
+  // Cargar notificaciones desde el backend
   useEffect(() => {
-    // Datos de ejemplo para notificaciones
-    const notificacionesEjemplo = [
-      {
-        id: 1,
-        titulo: 'Nuevo presupuesto recibido',
-        mensaje: 'Carlos Electricista envió un presupuesto para tu solicitud',
-        tipo: 'presupuesto',
-        leida: false,
-        fecha: new Date(Date.now() - 30 * 60 * 1000) // 30 minutos atrás
-      },
-      {
-        id: 2,
-        titulo: 'Solicitud aceptada',
-        mensaje: 'Tu presupuesto fue aceptado por María García',
-        tipo: 'aceptacion',
-        leida: false,
-        fecha: new Date(Date.now() - 2 * 60 * 60 * 1000) // 2 horas atrás
-      },
-      {
-        id: 3,
-        titulo: 'Calificación recibida',
-        mensaje: 'Recibiste una nueva calificación de 5 estrellas',
-        tipo: 'calificacion',
-        leida: true,
-        fecha: new Date(Date.now() - 24 * 60 * 60 * 1000) // 1 día atrás
+    const fetchNotificaciones = async () => {
+      try {
+        const res = await fetch('http://localhost:3000/api/notificaciones', {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include'
+        });
+
+        if (!res.ok) throw new Error('Error al obtener notificaciones');
+
+        const json = await res.json();
+        const items = (json.data || []).map(n => ({
+          id: n.id_notificacion || n.id,
+          titulo: n.titulo,
+          mensaje: n.mensaje,
+          tipo: n.tipo || 'general',
+          leida: (n.estado || '').toLowerCase() === 'leida',
+          fecha: n.fecha_envio ? new Date(n.fecha_envio) : new Date()
+        }));
+
+        setNotificaciones(items);
+      } catch (err) {
+        console.error('No se pudieron cargar las notificaciones:', err);
       }
-    ];
-    setNotificaciones(notificacionesEjemplo);
+    };
+
+    fetchNotificaciones();
   }, []);
 
   // Cerrar dropdown al hacer clic fuera
@@ -80,15 +82,57 @@ function NavbarAuth() {
 
   // Funciones para manejar notificaciones
   const toggleNotificaciones = () => {
-    setMostrarDropdown(!mostrarDropdown);
+    const next = !mostrarDropdown;
+    setMostrarDropdown(next);
+    // Si abrimos el dropdown, refrescamos las notificaciones
+    if (next) {
+      (async () => {
+        try {
+          const res = await fetch('http://localhost:3000/api/notificaciones', {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem('token')}`,
+              'Content-Type': 'application/json'
+            },
+            credentials: 'include'
+          });
+          if (!res.ok) throw new Error('Error al obtener notificaciones');
+          const json = await res.json();
+          const items = (json.data || []).map(n => ({
+            id: n.id_notificacion || n.id,
+            titulo: n.titulo,
+            mensaje: n.mensaje,
+            tipo: n.tipo || 'general',
+            leida: (n.estado || '').toLowerCase() === 'leida',
+            fecha: n.fecha_envio ? new Date(n.fecha_envio) : new Date()
+          }));
+          setNotificaciones(items);
+        } catch (err) {
+          console.error('No se pudieron cargar las notificaciones:', err);
+        }
+      })();
+    }
   };
 
-  const marcarComoLeida = (id) => {
-    setNotificaciones(notifs => 
-      notifs.map(notif => 
-        notif.id === id ? { ...notif, leida: true } : notif
-      )
-    );
+  const marcarComoLeida = async (id) => {
+    try {
+      const res = await fetch(`http://localhost:3000/api/notificaciones/${id}/marcar-leida`, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include'
+      });
+
+      if (!res.ok) throw new Error('Error marcando notificación como leída');
+
+      // Actualizar estado local
+      setNotificaciones(notifs => 
+        notifs.map(notif => notif.id === id ? { ...notif, leida: true } : notif)
+      );
+    } catch (err) {
+      console.error('No se pudo marcar la notificación como leída:', err);
+    }
   };
 
   const formatearTiempo = (fecha) => {
@@ -225,15 +269,7 @@ function NavbarAuth() {
                         </div>
                       )}
                     </div>
-                    
-                    <div className="dropdown-divider"></div>
-                    <div className="dropdown-item text-center">
-                      <small>
-                        <Link to="/notificaciones" className="text-decoration-none">
-                          Ver todas las notificaciones
-                        </Link>
-                      </small>
-                    </div>
+                  
                   </div>
                 )}
               </li>

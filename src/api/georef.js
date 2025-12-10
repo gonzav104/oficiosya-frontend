@@ -11,7 +11,7 @@ export async function getProvincias() {
 }
 
 // Obtener localidades por provincia (máx 1000 por defecto)
-export async function getLocalidades(provincia, max = 1000) {
+export async function getLocalidades(provincia, max = 1500) {
   if (!provincia) return [];
   const res = await fetch(`${API_BASE}/localidades?provincia=${encodeURIComponent(provincia)}&max=${max}`);
   if (!res.ok) throw new Error('Error al obtener localidades');

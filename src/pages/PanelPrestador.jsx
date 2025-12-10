@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Button, ValidatedInput } from '../components/common';
-import { useAuth } from '../contexts/AuthContext';
-import '../styles/pages/PanelPrestador.css';
+import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { Button, ValidatedInput } from "../components/common";
+import { useAuth } from "../contexts/AuthContext";
+import "../styles/pages/PanelPrestador.css";
 
+/*
 // Datos de Ejemplo
-const solicitudesRecibidas = [
+const solicitudes = [
   { 
     id: 10, 
     titulo: 'Instalación de grifo nuevo en baño', 
@@ -66,49 +67,140 @@ const solicitudesRecibidas = [
     imagenes: []
   }
 ];
+
+
+*/
+
 // ----------------------------------------------------
 
 function PanelPrestador() {
   const { user } = useAuth();
+  const idPrestador = user?.id_prestador;
 
-  const [filtro, setFiltro] = useState('Pendiente');
+  const [filtro, setFiltro] = useState("Pendiente");
   const [solicitudSeleccionada, setSolicitudSeleccionada] = useState(null);
   const [mostrarModalPresupuesto, setMostrarModalPresupuesto] = useState(false);
   const [mostrarModalRechazo, setMostrarModalRechazo] = useState(false);
   const [mostrarDetalles, setMostrarDetalles] = useState(false);
   const [errores, setErrores] = useState({});
 
+  const [solicitudes, setSolicitudes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
   // Formulario de presupuesto
   const [formPresupuesto, setFormPresupuesto] = useState({
-    monto: '',
-    plazo: '',
-    mensaje: ''
+    monto: "",
+    plazo: "",
+    mensaje: "",
   });
 
   // Formulario de rechazo
-  const [mensajeRechazo, setMensajeRechazo] = useState('');
+  const [mensajeRechazo, setMensajeRechazo] = useState("");
+
+  //---------------------------------------------------------------------------------------------------------------------
+
+  // Cargar solicitudes recibidas
+  useEffect(() => {
+    if (!idPrestador) {
+      setLoading(false);
+      return;
+    }
+
+    const fetchSolicitudes = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const params = new URLSearchParams();
+        if (filtro !== "Todos") {
+          params.append("estado", filtro);
+        }
+
+        const response = await fetch(
+          `http://localhost:3000/api/prestadores/${idPrestador}/solicitudes`,
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+            credentials: "include",
+          }
+        );
+
+        if (!response.ok) throw new Error("Error al cargar solicitudes");
+
+        const result = await response.json();
+        // Mapear los datos para aplanar la estructura anidada
+        const solicitudesMapeadas = (result.data || []).map((item) => {
+          const presupuestosSolicitud = item.solicitud?.presupuestos || [];
+          const presupuestoDelPrestador = presupuestosSolicitud.find(
+            (p) => p.id_prestador === idPrestador
+          );
+
+          return {
+            id: item.id_solicitud_prestador,
+            id_solicitud_prestador: item.id_solicitud_prestador,
+            estado: item.estado,
+            titulo: item.solicitud?.titulo || "",
+            descripcion: item.solicitud?.descripcion || "",
+            cliente: item.solicitud?.cliente?.nombre_completo || "",
+            categoria: item.solicitud?.categoria?.nombre || "",
+            localidad: item.solicitud?.ubicacion?.localidad || "",
+            fechaRecepcion: item.solicitud?.fecha_creacion
+              ? new Date(item.solicitud.fecha_creacion).toLocaleDateString()
+              : "",
+            solicitud: item.solicitud,
+            miPresupuesto: presupuestoDelPrestador
+              ? {
+                  id_presupuesto: presupuestoDelPrestador.id_presupuesto,
+                  monto: presupuestoDelPrestador.monto,
+                  plazo:
+                    presupuestoDelPrestador.plazo_dias ??
+                    presupuestoDelPrestador.plazo,
+                  mensaje: presupuestoDelPrestador.mensaje,
+                  estado: presupuestoDelPrestador.estado,
+                  fechaEnvio: presupuestoDelPrestador.fecha_envio,
+                  fechaAceptacion:
+                    presupuestoDelPrestador.fecha_aceptacion || null,
+                }
+              : null,
+          };
+        });
+        setSolicitudes(solicitudesMapeadas);
+      } catch (err) {
+        console.error(err);
+        setError("No se pudieron cargar las solicitudes");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSolicitudes();
+  }, [idPrestador]);
+
+  //-----------------------------------------------------------------------------------------------------
 
   // Filtrar solicitudes según estado
-  const solicitudesFiltradas = solicitudesRecibidas.filter(s => {
-    if (filtro === 'Todos') return true;
+  const solicitudesFiltradas = solicitudes.filter((s) => {
+    if (filtro === "Todos") return true;
     return s.estado === filtro;
   });
 
   // Obtener badge según estado
   const getEstadoBadge = (estado) => {
     const badges = {
-      'Pendiente': 'bg-warning text-dark',
-      'Enviado': 'bg-info',
-      'Aceptado': 'bg-success',
-      'Rechazado': 'bg-danger'
+      Pendiente: "bg-warning text-dark",
+      Enviado: "bg-info",
+      Aceptado: "bg-success",
+      Rechazado: "bg-danger",
     };
-    return badges[estado] || 'bg-secondary';
+    return badges[estado] || "bg-secondary";
   };
 
   // Abrir modal de presupuesto
   const abrirModalPresupuesto = (solicitud) => {
     setSolicitudSeleccionada(solicitud);
-    setFormPresupuesto({ monto: '', plazo: '', mensaje: '' });
+    setFormPresupuesto({ monto: "", plazo: "", mensaje: "" });
     setErrores({});
     setMostrarModalPresupuesto(true);
   };
@@ -116,7 +208,7 @@ function PanelPrestador() {
   // Abrir modal de rechazo
   const abrirModalRechazo = (solicitud) => {
     setSolicitudSeleccionada(solicitud);
-    setMensajeRechazo('');
+    setMensajeRechazo("");
     setMostrarModalRechazo(true);
   };
 
@@ -131,49 +223,179 @@ function PanelPrestador() {
     const nuevosErrores = {};
 
     if (!formPresupuesto.monto) {
-      nuevosErrores.monto = 'El monto es obligatorio';
-    } else if (isNaN(formPresupuesto.monto) || parseFloat(formPresupuesto.monto) <= 0) {
-      nuevosErrores.monto = 'Ingrese un monto numérico mayor a 0';
+      nuevosErrores.monto = "El monto es obligatorio";
+    } else if (
+      isNaN(formPresupuesto.monto) ||
+      parseFloat(formPresupuesto.monto) <= 0
+    ) {
+      nuevosErrores.monto = "Ingrese un monto numérico mayor a 0";
     }
 
     if (!formPresupuesto.plazo) {
-      nuevosErrores.plazo = 'El plazo es obligatorio';
-    } else if (isNaN(formPresupuesto.plazo) || parseInt(formPresupuesto.plazo) <= 0) {
-      nuevosErrores.plazo = 'Ingrese un plazo válido en días';
+      nuevosErrores.plazo = "El plazo es obligatorio";
+    } else if (
+      isNaN(formPresupuesto.plazo) ||
+      parseInt(formPresupuesto.plazo) <= 0
+    ) {
+      nuevosErrores.plazo = "Ingrese un plazo válido en días";
     }
 
     setErrores(nuevosErrores);
     return Object.keys(nuevosErrores).length === 0;
   };
 
+  /*
+
   // Enviar presupuesto
   const enviarPresupuesto = () => {
     if (validarPresupuesto()) {
-      console.log('Presupuesto enviado:', {
+      console.log("Presupuesto enviado:", {
         solicitud: solicitudSeleccionada.id,
-        ...formPresupuesto
+        ...formPresupuesto,
       });
 
-      alert(`Presupuesto enviado exitosamente a ${solicitudSeleccionada.cliente}\n\nMonto: ${formPresupuesto.monto}\nPlazo: ${formPresupuesto.plazo} días\n\nLa solicitud cambió al estado "Cotizada" y el cliente será notificado.`);
+      alert(
+        `Presupuesto enviado exitosamente a ${solicitudSeleccionada.cliente}\n\nMonto: ${formPresupuesto.monto}\nPlazo: ${formPresupuesto.plazo} días\n\nLa solicitud cambió al estado "Cotizada" y el cliente será notificado.`
+      );
 
       setMostrarModalPresupuesto(false);
       setSolicitudSeleccionada(null);
-      setFormPresupuesto({ monto: '', plazo: '', mensaje: '' });
+      setFormPresupuesto({ monto: "", plazo: "", mensaje: "" });
     }
   };
 
   // Rechazar solicitud
   const rechazarSolicitud = () => {
-    console.log('Solicitud rechazada:', {
+    console.log("Solicitud rechazada:", {
       solicitud: solicitudSeleccionada.id,
-      motivo: mensajeRechazo
+      motivo: mensajeRechazo,
     });
 
-    alert(`Solicitud rechazada\n\nSe notificó al cliente: ${solicitudSeleccionada.cliente}`);
+    alert(
+      `Solicitud rechazada\n\nSe notificó al cliente: ${solicitudSeleccionada.cliente}`
+    );
 
     setMostrarModalRechazo(false);
     setSolicitudSeleccionada(null);
-    setMensajeRechazo('');
+    setMensajeRechazo("");
+  };
+
+  */
+
+  const enviarPresupuesto = async () => {
+    if (!validarPresupuesto()) return;
+
+    try {
+      const id_solicitud_val =
+        solicitudSeleccionada?.solicitud?.id_solicitud ||
+        solicitudSeleccionada?.id_solicitud ||
+        solicitudSeleccionada?.id ||
+        null;
+
+      if (!id_solicitud_val) {
+        alert(
+          "Falta el identificador de la solicitud (id_solicitud). No se puede enviar el presupuesto."
+        );
+        return;
+      }
+
+      const body = {
+        id_solicitud: id_solicitud_val,
+        monto: parseFloat(formPresupuesto.monto),
+        plazo_dias: parseInt(formPresupuesto.plazo),
+        mensaje: formPresupuesto.mensaje.trim() || null,
+      };
+
+      const response = await fetch("http://localhost:3000/api/presupuestos", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        credentials: "include",
+        body: JSON.stringify(body),
+      });
+
+      const result = await response.json().catch(() => ({}));
+
+      if (response.ok) {
+        const nuevoPresupuesto =
+          result.data?.presupuesto ||
+          result.presupuesto ||
+          result.data?.presupuesto ||
+          result.presupuesto;
+        const solicitudPrestadorActualizada =
+          result.data?.solicitud_prestador ||
+          result.solicitud_prestador ||
+          null;
+
+        setSolicitudes((prev) =>
+          prev.map((s) => {
+            if (
+              s.id_solicitud_prestador ===
+              solicitudSeleccionada.id_solicitud_prestador
+            ) {
+              return {
+                ...s,
+                estado: solicitudPrestadorActualizada?.estado || "Enviado",
+                miPresupuesto: nuevoPresupuesto || {
+                  monto: parseFloat(formPresupuesto.monto),
+                  plazo: parseInt(formPresupuesto.plazo),
+                  mensaje: formPresupuesto.mensaje.trim() || null,
+                },
+              };
+            }
+            return s;
+          })
+        );
+
+        alert("¡Presupuesto enviado exitosamente!");
+        setMostrarModalPresupuesto(false);
+        setSolicitudSeleccionada(null);
+        setFormPresupuesto({ monto: "", plazo: "", mensaje: "" });
+      } else {
+        const errMsg =
+          result?.message ||
+          result?.error ||
+          result?.errors ||
+          "Error al enviar presupuesto";
+
+        const display =
+          typeof errMsg === "string" ? errMsg : JSON.stringify(errMsg);
+        alert(display);
+      }
+    } catch (err) {
+      alert("Error de conexión");
+    }
+  };
+
+  // Rechazar solicitud
+  const rechazarSolicitud = async () => {
+    try {
+      const response = await fetch(
+        `http://localhost:3000/api/prestadores/solicitudes-prestador/${solicitudSeleccionada.id_solicitud_prestador}/rechazar`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          credentials: "include",
+          body: JSON.stringify({ message: mensajeRechazo.trim() || null }),
+        }
+      );
+
+      if (response.ok) {
+        alert("Solicitud rechazada correctamente");
+        setMostrarModalRechazo(false);
+        window.location.reload();
+      } else {
+        const err = await response.json();
+        alert(err.message || "Error al rechazar");
+      }
+    } catch (err) {
+      alert("Error de conexión");
+    }
   };
 
   return (
@@ -185,17 +407,15 @@ function PanelPrestador() {
             <i className="bi bi-briefcase me-2"></i>
             Panel de Prestador
           </h2>
-          <p className="text-muted mb-0">Gestiona las solicitudes de presupuesto que recibes</p>
-          {user && <p className="text-primary fw-bold">Bienvenido, {user.nombre_completo}</p>}
+          <p className="text-muted mb-0">
+            Gestiona las solicitudes de presupuesto que recibes
+          </p>
+          {user && (
+            <p className="text-primary fw-bold">
+              Bienvenido, {user.nombre_completo}
+            </p>
+          )}
         </div>
-        <Button 
-          as={Link} 
-          to="/editar-perfil" 
-          variant="outline-primary"
-          icon="pencil-square"
-        >
-          Editar Perfil
-        </Button>
       </div>
 
       {/* ESTADÍSTICAS RÁPIDAS */}
@@ -204,7 +424,9 @@ function PanelPrestador() {
           <div className="stat-card stat-pendiente">
             <i className="bi bi-clock-history"></i>
             <div>
-              <h3>{solicitudesRecibidas.filter(s => s.estado === 'Pendiente').length}</h3>
+              <h3>
+                {solicitudes.filter((s) => s.estado === "Pendiente").length}
+              </h3>
               <p>Pendientes</p>
             </div>
           </div>
@@ -213,7 +435,9 @@ function PanelPrestador() {
           <div className="stat-card stat-enviado">
             <i className="bi bi-send-check"></i>
             <div>
-              <h3>{solicitudesRecibidas.filter(s => s.estado === 'Enviado').length}</h3>
+              <h3>
+                {solicitudes.filter((s) => s.estado === "Enviado").length}
+              </h3>
               <p>Enviados</p>
             </div>
           </div>
@@ -222,7 +446,9 @@ function PanelPrestador() {
           <div className="stat-card stat-aceptado">
             <i className="bi bi-check-circle"></i>
             <div>
-              <h3>{solicitudesRecibidas.filter(s => s.estado === 'Aceptado').length}</h3>
+              <h3>
+                {solicitudes.filter((s) => s.estado === "Aceptado").length}
+              </h3>
               <p>Aceptados</p>
             </div>
           </div>
@@ -231,7 +457,9 @@ function PanelPrestador() {
           <div className="stat-card stat-rechazado">
             <i className="bi bi-x-circle"></i>
             <div>
-              <h3>{solicitudesRecibidas.filter(s => s.estado === 'Rechazado').length}</h3>
+              <h3>
+                {solicitudes.filter((s) => s.estado === "Rechazado").length}
+              </h3>
               <p>Rechazados</p>
             </div>
           </div>
@@ -242,50 +470,50 @@ function PanelPrestador() {
       <div className="filtros-tabs mb-4">
         <ul className="nav nav-pills">
           <li className="nav-item">
-            <button 
-              className={`nav-link ${filtro === 'Pendiente' ? 'active' : ''}`}
-              onClick={() => setFiltro('Pendiente')}
+            <button
+              className={`nav-link ${filtro === "Pendiente" ? "active" : ""}`}
+              onClick={() => setFiltro("Pendiente")}
             >
               <i className="bi bi-clock me-2"></i>
               Pendientes
               <span className="badge bg-light text-dark ms-2">
-                {solicitudesRecibidas.filter(s => s.estado === 'Pendiente').length}
+                {solicitudes.filter((s) => s.estado === "Pendiente").length}
               </span>
             </button>
           </li>
           <li className="nav-item">
-            <button 
-              className={`nav-link ${filtro === 'Enviado' ? 'active' : ''}`}
-              onClick={() => setFiltro('Enviado')}
+            <button
+              className={`nav-link ${filtro === "Enviado" ? "active" : ""}`}
+              onClick={() => setFiltro("Enviado")}
             >
               <i className="bi bi-send me-2"></i>
               Enviados
               <span className="badge bg-light text-dark ms-2">
-                {solicitudesRecibidas.filter(s => s.estado === 'Enviado').length}
+                {solicitudes.filter((s) => s.estado === "Enviado").length}
               </span>
             </button>
           </li>
           <li className="nav-item">
-            <button 
-              className={`nav-link ${filtro === 'Aceptado' ? 'active' : ''}`}
-              onClick={() => setFiltro('Aceptado')}
+            <button
+              className={`nav-link ${filtro === "Aceptado" ? "active" : ""}`}
+              onClick={() => setFiltro("Aceptado")}
             >
               <i className="bi bi-check-circle me-2"></i>
               Aceptados
               <span className="badge bg-light text-dark ms-2">
-                {solicitudesRecibidas.filter(s => s.estado === 'Aceptado').length}
+                {solicitudes.filter((s) => s.estado === "Aceptado").length}
               </span>
             </button>
           </li>
           <li className="nav-item">
-            <button 
-              className={`nav-link ${filtro === 'Rechazado' ? 'active' : ''}`}
-              onClick={() => setFiltro('Rechazado')}
+            <button
+              className={`nav-link ${filtro === "Rechazado" ? "active" : ""}`}
+              onClick={() => setFiltro("Rechazado")}
             >
               <i className="bi bi-x-circle me-2"></i>
               Rechazados
               <span className="badge bg-light text-dark ms-2">
-                {solicitudesRecibidas.filter(s => s.estado === 'Rechazado').length}
+                {solicitudes.filter((s) => s.estado === "Rechazado").length}
               </span>
             </button>
           </li>
@@ -295,7 +523,7 @@ function PanelPrestador() {
       {/* LISTA DE SOLICITUDES */}
       <div className="solicitudes-lista">
         {solicitudesFiltradas.length > 0 ? (
-          solicitudesFiltradas.map(solicitud => (
+          solicitudesFiltradas.map((solicitud) => (
             <div key={solicitud.id} className="card solicitud-item mb-3">
               <div className="card-body">
                 <div className="solicitud-header">
@@ -326,32 +554,31 @@ function PanelPrestador() {
                 </div>
 
                 <p className="solicitud-descripcion mt-3">
-                  {solicitud.descripcion.length > 150 
-                    ? solicitud.descripcion.substring(0, 150) + '...' 
-                    : solicitud.descripcion
-                  }
+                  {solicitud.descripcion && solicitud.descripcion.length > 150
+                    ? solicitud.descripcion.substring(0, 150) + "..."
+                    : solicitud.descripcion || "Sin descripción"}
                 </p>
 
                 {/* RENDERIZADO SEGÚN ESTADO */}
                 <div className="solicitud-acciones mt-3">
                   {/* PENDIENTE */}
-                  {solicitud.estado === 'Pendiente' && (
+                  {solicitud.estado === "Pendiente" && (
                     <div className="d-flex gap-2 flex-wrap">
-                      <Button 
+                      <Button
                         variant="success"
                         onClick={() => abrirModalPresupuesto(solicitud)}
                         icon="envelope-check"
                       >
                         Enviar Presupuesto
                       </Button>
-                      <Button 
+                      <Button
                         variant="danger"
                         onClick={() => abrirModalRechazo(solicitud)}
                         icon="x-circle"
                       >
                         Rechazar
                       </Button>
-                      <Button 
+                      <Button
                         variant="outline-secondary"
                         onClick={() => verDetalles(solicitud)}
                         icon="eye"
@@ -362,40 +589,40 @@ function PanelPrestador() {
                   )}
 
                   {/* ENVIADO */}
-                  {solicitud.estado === 'Enviado' && solicitud.miPresupuesto && (
-                    <div className="presupuesto-info">
-                      <div className="alert alert-info mb-2">
-                        <strong>
-                          <i className="bi bi-info-circle me-2"></i>
-                          Tu Presupuesto
-                        </strong>
-                        <div className="mt-2">
-                          <p className="mb-1">
-                            <strong>Monto:</strong> ${solicitud.miPresupuesto.monto.toLocaleString()}
-                          </p>
-                          <p className="mb-1">
-                            <strong>Plazo:</strong> {solicitud.miPresupuesto.plazo} días
-                          </p>
-                          {solicitud.miPresupuesto.mensaje && (
-                            <p className="mb-0">
-                              <strong>Mensaje:</strong> {solicitud.miPresupuesto.mensaje}
+                  {solicitud.estado === "Enviado" &&
+                    solicitud.miPresupuesto && (
+                      <div className="presupuesto-info">
+                        <div className="alert alert-info mb-2">
+                          <strong>
+                            <i className="bi bi-info-circle me-2"></i>
+                            Tu Presupuesto
+                          </strong>
+                          <div className="mt-2">
+                            <p className="mb-1">
+                              <strong>Monto:</strong> $
+                              {solicitud.miPresupuesto.monto.toLocaleString()}
                             </p>
-                          )}
+                            {solicitud.miPresupuesto.mensaje && (
+                              <p className="mb-0">
+                                <strong>Mensaje:</strong>{" "}
+                                {solicitud.miPresupuesto.mensaje}
+                              </p>
+                            )}
+                          </div>
                         </div>
+                        <Button
+                          variant="outline-secondary"
+                          size="small"
+                          onClick={() => verDetalles(solicitud)}
+                          icon="eye"
+                        >
+                          Ver Detalles
+                        </Button>
                       </div>
-                      <Button 
-                        variant="outline-secondary" 
-                        size="small"
-                        onClick={() => verDetalles(solicitud)}
-                        icon="eye"
-                      >
-                        Ver Detalles
-                      </Button>
-                    </div>
-                  )}
+                    )}
 
                   {/* ACEPTADO */}
-                  {solicitud.estado === 'Aceptado' && (
+                  {solicitud.estado === "Aceptado" && (
                     <div>
                       <div className="alert alert-success mb-3">
                         <strong>
@@ -403,20 +630,20 @@ function PanelPrestador() {
                           ¡Presupuesto Aceptado!
                         </strong>
                         <p className="mb-2 mt-2">
-                          <strong>Monto acordado:</strong> ${solicitud.miPresupuesto.monto.toLocaleString()}
+                          <strong>Monto acordado:</strong> $
+                          {solicitud.miPresupuesto.monto.toLocaleString()}
                         </p>
-                        <small className="text-muted">
-                          Aceptado el {solicitud.miPresupuesto.fechaAceptacion}
-                        </small>
                       </div>
 
                       <div className="alert alert-info">
                         <i className="bi bi-info-circle me-2"></i>
-                        <strong>Próximos pasos:</strong> El cliente tiene acceso a tus datos de contacto y se comunicará contigo para coordinar el trabajo.
+                        <strong>Próximos pasos:</strong> El cliente tiene acceso
+                        a tus datos de contacto y se comunicará contigo para
+                        coordinar el trabajo.
                       </div>
 
-                      <Button 
-                        variant="outline-secondary" 
+                      <Button
+                        variant="outline-secondary"
                         size="small"
                         onClick={() => verDetalles(solicitud)}
                         icon="eye"
@@ -427,7 +654,7 @@ function PanelPrestador() {
                   )}
 
                   {/* RECHAZADO */}
-                  {solicitud.estado === 'Rechazado' && (
+                  {solicitud.estado === "Rechazado" && (
                     <div className="alert alert-danger">
                       <strong>
                         <i className="bi bi-x-circle me-2"></i>
@@ -438,9 +665,6 @@ function PanelPrestador() {
                           <strong>Motivo:</strong> {solicitud.motivoRechazo}
                         </p>
                       )}
-                      <small className="text-muted d-block mt-1">
-                        Rechazado el {solicitud.fechaRechazo}
-                      </small>
                     </div>
                   )}
                 </div>
@@ -451,7 +675,9 @@ function PanelPrestador() {
           <div className="alert alert-info text-center">
             <i className="bi bi-inbox fs-1 d-block mb-3"></i>
             <h5>No hay solicitudes en este estado</h5>
-            <p className="mb-0">Las solicitudes con estado "{filtro}" aparecerán aquí</p>
+            <p className="mb-0">
+              Las solicitudes con estado "{filtro}" aparecerán aquí
+            </p>
           </div>
         )}
       </div>
@@ -468,9 +694,9 @@ function PanelPrestador() {
                     <i className="bi bi-envelope-check me-2"></i>
                     Enviar Presupuesto
                   </h5>
-                  <button 
-                    type="button" 
-                    className="btn-close" 
+                  <button
+                    type="button"
+                    className="btn-close"
                     onClick={() => setMostrarModalPresupuesto(false)}
                   ></button>
                 </div>
@@ -489,7 +715,12 @@ function PanelPrestador() {
                     name="monto"
                     label="Monto"
                     value={formPresupuesto.monto}
-                    onChange={(e) => setFormPresupuesto({...formPresupuesto, monto: e.target.value})}
+                    onChange={(e) =>
+                      setFormPresupuesto({
+                        ...formPresupuesto,
+                        monto: e.target.value,
+                      })
+                    }
                     error={errores.monto}
                     placeholder="Ej: 15000"
                     required
@@ -501,7 +732,12 @@ function PanelPrestador() {
                     name="plazo"
                     label="Plazo de entrega"
                     value={formPresupuesto.plazo}
-                    onChange={(e) => setFormPresupuesto({...formPresupuesto, plazo: e.target.value})}
+                    onChange={(e) =>
+                      setFormPresupuesto({
+                        ...formPresupuesto,
+                        plazo: e.target.value,
+                      })
+                    }
                     error={errores.plazo}
                     placeholder="Ej: 3"
                     required
@@ -511,13 +747,19 @@ function PanelPrestador() {
 
                   <div className="mb-3">
                     <label className="form-label">
-                      Mensaje al cliente <span className="text-muted">(opcional)</span>
+                      Mensaje al cliente{" "}
+                      <span className="text-muted">(opcional)</span>
                     </label>
-                    <textarea 
+                    <textarea
                       className="form-control"
                       rows="3"
                       value={formPresupuesto.mensaje}
-                      onChange={(e) => setFormPresupuesto({...formPresupuesto, mensaje: e.target.value})}
+                      onChange={(e) =>
+                        setFormPresupuesto({
+                          ...formPresupuesto,
+                          mensaje: e.target.value,
+                        })
+                      }
                       placeholder="Agrega información adicional sobre el presupuesto..."
                     ></textarea>
                   </div>
@@ -525,18 +767,19 @@ function PanelPrestador() {
                   <div className="alert alert-warning">
                     <small>
                       <i className="bi bi-info-circle me-2"></i>
-                      Al enviar, la solicitud cambiará al estado "Cotizada" y el cliente será notificado.
+                      Al enviar, la solicitud cambiará al estado "Cotizada" y el
+                      cliente será notificado.
                     </small>
                   </div>
                 </div>
                 <div className="modal-footer">
-                  <Button 
+                  <Button
                     variant="secondary"
                     onClick={() => setMostrarModalPresupuesto(false)}
                   >
                     Cancelar
                   </Button>
-                  <Button 
+                  <Button
                     variant="success"
                     onClick={enviarPresupuesto}
                     icon="send"
@@ -562,9 +805,9 @@ function PanelPrestador() {
                     <i className="bi bi-x-circle me-2"></i>
                     Rechazar Solicitud
                   </h5>
-                  <button 
-                    type="button" 
-                    className="btn-close btn-close-white" 
+                  <button
+                    type="button"
+                    className="btn-close btn-close-white"
                     onClick={() => setMostrarModalRechazo(false)}
                   ></button>
                 </div>
@@ -580,9 +823,10 @@ function PanelPrestador() {
 
                   <div className="mb-3">
                     <label className="form-label">
-                      Motivo del rechazo <span className="text-muted">(opcional)</span>
+                      Motivo del rechazo{" "}
+                      <span className="text-muted">(opcional)</span>
                     </label>
-                    <textarea 
+                    <textarea
                       className="form-control"
                       rows="3"
                       value={mensajeRechazo}
@@ -594,18 +838,19 @@ function PanelPrestador() {
                   <div className="alert alert-warning">
                     <small>
                       <i className="bi bi-exclamation-triangle me-2"></i>
-                      <strong>Atención:</strong> Esta acción no se puede deshacer y el cliente será notificado.
+                      <strong>Atención:</strong> Esta acción no se puede
+                      deshacer y el cliente será notificado.
                     </small>
                   </div>
                 </div>
                 <div className="modal-footer">
-                  <Button 
+                  <Button
                     variant="secondary"
                     onClick={() => setMostrarModalRechazo(false)}
                   >
                     Cancelar
                   </Button>
-                  <Button 
+                  <Button
                     variant="danger"
                     onClick={rechazarSolicitud}
                     icon="x-circle"
@@ -631,18 +876,26 @@ function PanelPrestador() {
                     <i className="bi bi-file-text me-2"></i>
                     Detalles de la Solicitud
                   </h5>
-                  <button 
-                    type="button" 
-                    className="btn-close" 
+                  <button
+                    type="button"
+                    className="btn-close"
                     onClick={() => setMostrarDetalles(false)}
                   ></button>
                 </div>
                 <div className="modal-body">
                   <h5>{solicitudSeleccionada.titulo}</h5>
                   <div className="mb-3">
-                    <span className="badge bg-secondary me-2">{solicitudSeleccionada.categoria}</span>
-                    <span className="badge bg-info me-2">{solicitudSeleccionada.localidad}</span>
-                    <span className={`badge ${getEstadoBadge(solicitudSeleccionada.estado)}`}>
+                    <span className="badge bg-secondary me-2">
+                      {solicitudSeleccionada.categoria}
+                    </span>
+                    <span className="badge bg-info me-2">
+                      {solicitudSeleccionada.localidad}
+                    </span>
+                    <span
+                      className={`badge ${getEstadoBadge(
+                        solicitudSeleccionada.estado
+                      )}`}
+                    >
                       {solicitudSeleccionada.estado}
                     </span>
                   </div>
@@ -652,18 +905,23 @@ function PanelPrestador() {
                   <h6>Descripción</h6>
                   <p>{solicitudSeleccionada.descripcion}</p>
 
-                  {solicitudSeleccionada.imagenes && solicitudSeleccionada.imagenes.length > 0 && (
-                    <>
-                      <h6 className="mt-3">Imágenes adjuntas</h6>
-                      <div className="row">
-                        {solicitudSeleccionada.imagenes.map((img, index) => (
-                          <div key={index} className="col-4 mb-2">
-                            <img src={img} alt={`Imagen ${index + 1}`} className="img-fluid rounded" />
-                          </div>
-                        ))}
-                      </div>
-                    </>
-                  )}
+                  {solicitudSeleccionada.imagenes &&
+                    solicitudSeleccionada.imagenes.length > 0 && (
+                      <>
+                        <h6 className="mt-3">Imágenes adjuntas</h6>
+                        <div className="row">
+                          {solicitudSeleccionada.imagenes.map((img, index) => (
+                            <div key={index} className="col-4 mb-2">
+                              <img
+                                src={img}
+                                alt={`Imagen ${index + 1}`}
+                                className="img-fluid rounded"
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    )}
 
                   <hr />
 
@@ -672,12 +930,13 @@ function PanelPrestador() {
                       <strong>Cliente:</strong> {solicitudSeleccionada.cliente}
                     </div>
                     <div className="col-6">
-                      <strong>Recibida:</strong> {solicitudSeleccionada.fechaRecepcion}
+                      <strong>Recibida:</strong>{" "}
+                      {solicitudSeleccionada.fechaRecepcion}
                     </div>
                   </div>
                 </div>
                 <div className="modal-footer">
-                  <Button 
+                  <Button
                     variant="secondary"
                     onClick={() => setMostrarDetalles(false)}
                   >

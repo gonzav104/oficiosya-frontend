@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
-import { Button } from '../components/common';
-import '../styles/pages/PerfilPrestador.css';
+import React, { useState, useEffect } from "react";
+import { useParams, Link, useNavigate, useLocation } from "react-router-dom";
+import { Button } from "../components/common";
+import "../styles/pages/PerfilPrestador.css";
 
+/*
 // Datos de Ejemplo
 const prestadoresData = {
   101: {
@@ -112,31 +113,159 @@ const prestadoresData = {
   }
 };
 
+*/
+
 function PerfilPrestador() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const id_solicitud = location.state?.solicitudId || 1; // Valor por defecto si no se pasa
   const [imagenModalOpen, setImagenModalOpen] = useState(false);
   const [imagenSeleccionada, setImagenSeleccionada] = useState(null);
   const [mostrarTodasCalificaciones, setMostrarTodasCalificaciones] = useState(false);
+  const [prestador, setPrestador] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Buscar prestador
-  const prestador = prestadoresData[parseInt(id)];
+  useEffect(() => {
+    const fetchPrestador = async () => {
+      try {
+        setLoading(true);
+        setError(null);
 
-  if (!prestador) {
+        const res = await fetch(`http://localhost:3000/api/prestadores/${id}`, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        });
+
+        const json = await res.json();
+
+        if (!res.ok) {
+          throw new Error(json.error || "Error al obtener el prestador");
+        }
+
+        const data = json.data || json; // según cómo responda tu ResponseService
+
+        // 🔹 Mapear datos del backend al formato que ya usa tu UI
+        const viewModel = {
+          // nombre / ubicación
+          nombrePublico: data.nombre_completo,
+          localidad: data.ubicacion?.localidad || "",
+          provincia: data.ubicacion?.provincia || "",
+
+          // categorías -> array de strings
+          categorias: (data.categorias || []).map((c) => c.nombre),
+
+          // rating (por ahora, si no tenés calificaciones en la API, hardcodeamos)
+          calificacionPromedio: data.calificacion_promedio || 0,
+          cantidadCalificaciones: data.cantidad_calificaciones || 0,
+
+          // estadísticas simples
+          trabajosRealizados: data.trabajos_realizados || 0,
+          experiencia: data.experiencia || "Sin información",
+
+          // descripción
+          descripcion:
+            data.descripcion || "Este prestador aún no cargó una descripción.",
+
+          // imágenes de trabajos -> desde ImagenPrestador
+          imagenesTrabajos: (data.imagenes || []).map((img) => ({
+            id: img.id_imagen_prestador,
+            url: img.ruta_imagen,
+            descripcion: img.descripcion || "Trabajo realizado",
+            fecha: img.fecha_subida
+              ? new Date(img.fecha_subida).toLocaleDateString()
+              : "",
+          })),
+
+          // calificaciones: si todavía no tenés en la API, lo dejamos vacío
+          calificaciones: [], // cuando tengas endpoint de calificaciones lo llenás acá
+        };
+
+        setPrestador(viewModel);
+        // Cargar calificaciones reales del backend para este prestador
+        try {
+          const token = localStorage.getItem("token");
+          const resCal = await fetch(
+            `http://localhost:3000/api/calificaciones/prestador/${id}`,
+            {
+              method: "GET",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: token ? `Bearer ${token}` : undefined,
+              },
+              credentials: "include",
+            }
+          );
+          const jc = await resCal.json();
+          if (resCal.ok && Array.isArray(jc.data)) {
+            const califs = jc.data.map((c) => ({
+              id: c.id_calificacion || c.id || null,
+              cliente: c.cliente?.nombre_completo || (c.cliente && c.cliente.nombre_completo) || "Anónimo",
+              estrellas: c.estrellas,
+              comentario: c.comentario || "",
+              fecha: c.fecha_creacion ? new Date(c.fecha_creacion).toLocaleDateString() : (c.fecha ? c.fecha : ""),
+              trabajo: c.solicitud?.titulo || "",
+            }));
+
+            setPrestador((prev) => ({
+              ...(prev || {}),
+              calificaciones: califs,
+              cantidadCalificaciones: jc.pagination?.total || califs.length,
+              calificacionPromedio:
+                califs.length > 0
+                  ? (
+                      califs.reduce((s, it) => s + (it.estrellas || 0), 0) /
+                      califs.length
+                    ).toFixed(1)
+                  : prev.calificacionPromedio || 0,
+            }));
+          }
+        } catch (errCal) {
+          console.warn("No se pudieron cargar calificaciones del prestador:", errCal);
+        }
+      } catch (err) {
+        console.error(err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPrestador();
+  }, [id]);
+
+  // 🔹 Mientras carga
+  if (loading) {
+    return (
+      <div className="container text-center py-5">
+        <div className="spinner-border" role="status"></div>
+        <p className="mt-3">Cargando perfil del prestador...</p>
+      </div>
+    );
+  }
+
+  // 🔹 Si hubo error o no existe
+  if (error || !prestador) {
     return (
       <div className="container text-center py-5">
         <div className="alert alert-warning">
           <i className="bi bi-exclamation-triangle fs-1 d-block mb-3"></i>
           <h3>Prestador no encontrado</h3>
-          <p>El perfil que buscas no existe o fue eliminado.</p>
-          <Button variant="primary" className="mt-3" onClick={() => navigate(-1)} icon="arrow-left">
+          <p>{error || "El perfil que buscas no existe o fue eliminado."}</p>
+          <Button
+            variant="primary"
+            className="mt-3"
+            onClick={() => navigate(-1)}
+            icon="arrow-left"
+          >
             Volver
           </Button>
         </div>
       </div>
     );
   }
-
   // Función para renderizar estrellas
   const renderEstrellas = (calificacion) => {
     const estrellas = [];
@@ -157,8 +286,8 @@ function PerfilPrestador() {
   };
 
   // Mostrar solo primeras 3 calificaciones o todas
-  const calificacionesMostradas = mostrarTodasCalificaciones 
-    ? prestador.calificaciones 
+  const calificacionesMostradas = mostrarTodasCalificaciones
+    ? prestador.calificaciones
     : prestador.calificaciones.slice(0, 3);
 
   // Abrir imagen en modal
@@ -171,7 +300,11 @@ function PerfilPrestador() {
     <div className="perfil-prestador-container">
       {/* BOTÓN VOLVER */}
       <div className="mb-4">
-        <Button variant="outline-secondary" onClick={() => navigate(-1)} icon="arrow-left">
+        <Button
+          variant="outline-secondary"
+          onClick={() => navigate(-1)}
+          icon="arrow-left"
+        >
           Volver
         </Button>
       </div>
@@ -195,7 +328,7 @@ function PerfilPrestador() {
 
               {/* Categorías */}
               <div className="categorias-badges mb-3">
-                {prestador.categorias.map(cat => (
+                {prestador.categorias.map((cat) => (
                   <span key={cat} className="badge bg-primary me-1 mb-1">
                     <i className="bi bi-tools me-1"></i>
                     {cat}
@@ -219,13 +352,6 @@ function PerfilPrestador() {
               {/* Estadísticas */}
               <div className="estadisticas-box mb-3">
                 <div className="stat-item">
-                  <i className="bi bi-briefcase-fill"></i>
-                  <div>
-                    <strong>{prestador.trabajosRealizados}</strong>
-                    <small>Trabajos realizados</small>
-                  </div>
-                </div>
-                <div className="stat-item">
                   <i className="bi bi-award-fill"></i>
                   <div>
                     <strong>{prestador.experiencia}</strong>
@@ -238,22 +364,11 @@ function PerfilPrestador() {
               <div className="alert alert-info mb-3">
                 <i className="bi bi-shield-check me-2"></i>
                 <small>
-                  <strong>Datos de contacto protegidos</strong><br/>
+                  <strong>Datos de contacto protegidos</strong>
+                  <br />
                   Se mostrarán al aceptar un presupuesto
                 </small>
               </div>
-
-              {/* Botón solicitar presupuesto */}
-              <Button 
-                as={Link}
-                to={`/solicitud/1/prestador/${id}/solicitar-presupuesto`} 
-                variant="success"
-                size="large"
-                className="w-100 mb-2"
-                icon="envelope-check"
-              >
-                Solicitar Presupuesto
-              </Button>
             </div>
           </div>
         </div>
@@ -285,12 +400,12 @@ function PerfilPrestador() {
                 <div className="row g-3">
                   {prestador.imagenesTrabajos.map((imagen) => (
                     <div key={imagen.id} className="col-md-6">
-                      <div 
+                      <div
                         className="trabajo-imagen-card"
                         onClick={() => abrirImagenModal(imagen)}
                       >
-                        <img 
-                          src={imagen.url} 
+                        <img
+                          src={imagen.url}
                           alt={imagen.descripcion}
                           className="img-fluid rounded"
                         />
@@ -354,14 +469,19 @@ function PerfilPrestador() {
                   {/* Botón ver más calificaciones */}
                   {prestador.calificaciones.length > 3 && (
                     <div className="text-center mt-3">
-                      <Button 
+                      <Button
                         variant="outline-primary"
-                        onClick={() => setMostrarTodasCalificaciones(!mostrarTodasCalificaciones)}
-                      >
-                        {mostrarTodasCalificaciones 
-                          ? 'Ver menos' 
-                          : `Ver todas las calificaciones (${prestador.calificaciones.length - 3} más)`
+                        onClick={() =>
+                          setMostrarTodasCalificaciones(
+                            !mostrarTodasCalificaciones
+                          )
                         }
+                      >
+                        {mostrarTodasCalificaciones
+                          ? "Ver menos"
+                          : `Ver todas las calificaciones (${
+                              prestador.calificaciones.length - 3
+                            } más)`}
                       </Button>
                     </div>
                   )}
@@ -380,21 +500,32 @@ function PerfilPrestador() {
       {/* MODAL IMAGEN AMPLIADA */}
       {imagenModalOpen && imagenSeleccionada && (
         <>
-          <div className="modal-backdrop show" onClick={() => setImagenModalOpen(false)}></div>
-          <div className="modal show d-block" onClick={() => setImagenModalOpen(false)}>
-            <div className="modal-dialog modal-dialog-centered modal-lg" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="modal-backdrop show"
+            onClick={() => setImagenModalOpen(false)}
+          ></div>
+          <div
+            className="modal show d-block"
+            onClick={() => setImagenModalOpen(false)}
+          >
+            <div
+              className="modal-dialog modal-dialog-centered modal-lg"
+              onClick={(e) => e.stopPropagation()}
+            >
               <div className="modal-content">
                 <div className="modal-header">
-                  <h5 className="modal-title">{imagenSeleccionada.descripcion}</h5>
-                  <button 
-                    type="button" 
-                    className="btn-close" 
+                  <h5 className="modal-title">
+                    {imagenSeleccionada.descripcion}
+                  </h5>
+                  <button
+                    type="button"
+                    className="btn-close"
                     onClick={() => setImagenModalOpen(false)}
                   ></button>
                 </div>
                 <div className="modal-body text-center">
-                  <img 
-                    src={imagenSeleccionada.url} 
+                  <img
+                    src={imagenSeleccionada.url}
                     alt={imagenSeleccionada.descripcion}
                     className="img-fluid rounded"
                   />
