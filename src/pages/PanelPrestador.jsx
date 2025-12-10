@@ -416,14 +416,6 @@ function PanelPrestador() {
             </p>
           )}
         </div>
-        <Button
-          as={Link}
-          to="/editar-perfil"
-          variant="outline-primary"
-          icon="pencil-square"
-        >
-          Editar Perfil
-        </Button>
       </div>
 
       {/* ESTADÍSTICAS RÁPIDAS */}

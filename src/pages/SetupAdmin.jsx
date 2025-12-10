@@ -31,7 +31,8 @@ const SetupAdmin = () => {
     try {
       await api.post('/auth/setup-admin', {
         correo: formData.correo,
-        contrasena: formData.contrasena
+        contrasena: formData.contrasena,
+        confirmar_contrasena: formData.confirmar
       });
       
       setSuccess(true);
