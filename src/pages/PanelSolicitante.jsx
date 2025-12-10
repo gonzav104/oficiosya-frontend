@@ -1,12 +1,11 @@
-import { Link } from 'react-router-dom';
-import React, { useState, useEffect } from 'react';
-import { Button, ValidatedInput } from '../components/common';
-import { getUbicacionDelUsuario } from '../utils/userUtils'; // *CAMBIO*----------------------
-import { getSolicitudes } from '../utils/solicitudes'; // *CAMBIO*----------------------
-import { useAuth } from '../contexts/AuthContext'; // *CAMBIO*----------------------
-import '../styles/pages/PanelSolicitante.css';
-
-
+import { Link } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Button, ValidatedInput } from "../components/common";
+import { getUbicacionDelUsuario } from "../utils/userUtils"; // *CAMBIO*----------------------
+import { getSolicitudes } from "../utils/solicitudes"; // *CAMBIO*----------------------
+import { useAuth } from "../contexts/AuthContext"; // *CAMBIO*----------------------
+import { generarEnlaceWhatsApp } from "../utils/validaciones.js";
+import "../styles/pages/PanelSolicitante.css";
 
 // Datos de Ejemplo
 /*const solicitudesFalsas = [
@@ -71,8 +70,7 @@ import '../styles/pages/PanelSolicitante.css';
 // ------------------------------------
 
 function PanelSolicitante() {
-
-  const [filtro, setFiltro] = useState('Todos');
+  const [filtro, setFiltro] = useState("Todos");
   const [showModal, setShowModal] = useState(false);
   const [errores, setErrores] = useState({});
   const [loading, setLoading] = useState(true); //*CAMIBIO*--------
@@ -80,15 +78,15 @@ function PanelSolicitante() {
   const [categorias, setCategorias] = useState([]); //*CAMIBIO*--------
   const [idUbicacionUsuario, setIdUbicacionUsuario] = useState(null); //*CAMIBIO*--------
 
-  const { user } = useAuth();  //*CAMIBIO*--------
+  const { user } = useAuth(); //*CAMIBIO*--------
 
 
   // Estado del formulario de nueva solicitud
   const [formData, setFormData] = useState({
-    titulo: '',
-    categoria: '',
-    descripcion: '',
-    imagenes: []
+    titulo: "",
+    categoria: "",
+    descripcion: "",
+    imagenes: [],
   });
 
   //---------------------------
@@ -98,40 +96,88 @@ function PanelSolicitante() {
   const [presupuestoSeleccionado, setPresupuestoSeleccionado] = useState(null);
   const [presupuestoAceptado, setPresupuestoAceptado] = useState(false);
 
-
-
-
+  /*
   // Simulación de presupuesto recibido
   const presupuestoEjemplo = {
     idSolicitud: 3,
     nombrePrestador: "Diego Martínez",
     monto: 25000,
-    mensaje: "Incluye materiales y mano de obra. Finalización estimada: 2 días.",
+    mensaje:
+      "Incluye materiales y mano de obra. Finalización estimada: 2 días.",
     contacto: {
       telefono: "+54 9 3329 456789",
       correo: "diego.martinez@example.com",
-      whatsapp: "https://wa.me/543329456789"
+      whatsapp: "https://wa.me/543329456789",
+    },
+  };
+  */
+
+  const handleMostrarPresupuesto = async (idSolicitud) => {
+    try {
+      const res = await fetch(
+        `http://localhost:3000/api/clientes/solicitudes/${idSolicitud}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${localStorage.token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      const json = await res.json();
+
+      if (!json.success || json.data.presupuestos.length === 0) {
+        return alert("No hay presupuestos disponibles aún");
+      }
+
+      setPresupuestoSeleccionado(json.data.presupuestos[0]); // el primero
+      setShowModalPresupuesto(true);
+    } catch (error) {
+      console.error("Error cargando presupuesto:", error);
     }
   };
 
+  const handleAceptarPresupuesto = async () => {
+    try {
+      const idPresupuesto = presupuestoSeleccionado.id_presupuesto;
 
+      const res = await fetch(
+        `http://localhost:3000/api/clientes/presupuesto/${idPresupuesto}/aceptar`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${localStorage.token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
-  const handleMostrarPresupuesto = () => {
-    setPresupuestoSeleccionado(presupuestoEjemplo);
-    setShowModalPresupuesto(true);
-  };
+      const json = await res.json();
 
-  const handleAceptarPresupuesto = () => {
-    setPresupuestoAceptado(true);
-    alert("Presupuesto aceptado. La solicitud cambia a 'Pendiente de Calificación'.");
+      if (!res.ok) {
+        return alert(json.error || "Error al aceptar presupuesto");
+      }
+
+      setPresupuestoAceptado(true);
+      alert(
+        "Presupuesto aceptado. La solicitud pasó a Pendiente de Calificación"
+      );
+
+      // recargar solicitudes
+      const nuevas = await getSolicitudes(user.id_cliente);
+      setSolicitudes(nuevas);
+    } catch (error) {
+      console.error("Error aceptando presupuesto:", error);
+      alert("Error al conectar con el servidor");
+    }
   };
 
   const handleRechazarPresupuesto = () => {
-    alert("Has rechazado el presupuesto. La solicitud permanecerá en estado 'Cotizada'.");
+    alert(
+      "Has rechazado el presupuesto. La solicitud permanecerá en estado 'Cotizada'."
+    );
     setShowModalPresupuesto(false);
   };
-
-
 
   //*CAMIBIO*---------------------------------------------------------------------------------------------
 
@@ -152,12 +198,11 @@ function PanelSolicitante() {
     cargarSolicitudes();
   }, [user?.id_cliente]);
 
-
   // 2. Cargar categorías (solo una vez, nunca cambia)
   useEffect(() => {
     fetch("http://localhost:3000/api/categorias")
-      .then(res => res.json())
-      .then(json => setCategorias(json.data?.categoriasCompletas || []))
+      .then((res) => res.json())
+      .then((json) => setCategorias(json.data?.categoriasCompletas || []))
       .catch(() => setCategorias([]));
   }, []);
 
@@ -174,7 +219,9 @@ function PanelSolicitante() {
         if (idUbicacion) {
           setIdUbicacionUsuario(idUbicacion);
         } else {
-          alert("Completa tu ubicación en el perfil para poder crear solicitudes.");
+          alert(
+            "Completa tu ubicación en el perfil para poder crear solicitudes."
+          );
         }
       } catch (error) {
         console.error("Error cargando ubicación:", error);
@@ -187,25 +234,25 @@ function PanelSolicitante() {
 
   //-------------------------------------------------------------------------------------------------------
 
-
   // Filtrar solicitudes por estado
 
-  const solicitudesFiltradas = solicitudes.filter(solicitud => {  //*CAMIBIO*--------SOLICITUDESFALSAS POR SOLICITUDES
-    if (filtro === 'Todos') return true;
+  const solicitudesFiltradas = solicitudes.filter((solicitud) => {
+    //*CAMIBIO*--------SOLICITUDESFALSAS POR SOLICITUDES
+    if (filtro === "Todos") return true;
     return solicitud.estado === filtro;
   });
 
   // Manejo de cambios en el formulario
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
     if (errores[name]) {
-      setErrores(prev => ({
+      setErrores((prev) => ({
         ...prev,
-        [name]: null
+        [name]: null,
       }));
     }
   };
@@ -216,8 +263,8 @@ function PanelSolicitante() {
     const nuevosErrores = {};
 
     if (files.length > 1) {
-      nuevosErrores.imagenes = 'Máximo 1 imagen permitida';
-      setErrores(prev => ({ ...prev, ...nuevosErrores }));
+      nuevosErrores.imagenes = "Máximo 1 imagen permitida";
+      setErrores((prev) => ({ ...prev, ...nuevosErrores }));
       return;
     }
 
@@ -225,25 +272,27 @@ function PanelSolicitante() {
     if (files.length === 1) {
       const file = files[0];
       if (file.size > 5 * 1024 * 1024) {
-        nuevosErrores.imagenes = 'La imagen debe pesar menos de 5MB';
-      } else if (!['image/jpeg', 'image/jpg', 'image/png'].includes(file.type)) {
-        nuevosErrores.imagenes = 'Solo se permiten archivos JPG, JPEG y PNG';
+        nuevosErrores.imagenes = "La imagen debe pesar menos de 5MB";
+      } else if (
+        !["image/jpeg", "image/jpg", "image/png"].includes(file.type)
+      ) {
+        nuevosErrores.imagenes = "Solo se permiten archivos JPG, JPEG y PNG";
       } else {
         archivosValidos.push(file);
       }
     }
 
     if (Object.keys(nuevosErrores).length > 0) {
-      setErrores(prev => ({ ...prev, ...nuevosErrores }));
-      e.target.value = '';
+      setErrores((prev) => ({ ...prev, ...nuevosErrores }));
+      e.target.value = "";
     } else {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
-        imagenes: archivosValidos
+        imagenes: archivosValidos,
       }));
-      setErrores(prev => ({
+      setErrores((prev) => ({
         ...prev,
-        imagenes: null
+        imagenes: null,
       }));
     }
   };
@@ -252,23 +301,27 @@ function PanelSolicitante() {
     const nuevosErrores = {};
 
     if (!formData.titulo.trim()) {
-      nuevosErrores.titulo = 'El título es obligatorio';
-    } else if (formData.titulo.trim().length < 5) {         // *CAMBIO*-----------
-      nuevosErrores.titulo = 'El título debe tener al menos 5 caracteres';
+      nuevosErrores.titulo = "El título es obligatorio";
+    } else if (formData.titulo.trim().length < 5) {
+      // *CAMBIO*-----------
+      nuevosErrores.titulo = "El título debe tener al menos 5 caracteres";
     } else if (formData.titulo.length > 80) {
-      nuevosErrores.titulo = 'Ingrese un título válido (máx. 80 caracteres)';
+      nuevosErrores.titulo = "Ingrese un título válido (máx. 80 caracteres)";
     }
 
     if (!formData.categoria) {
-      nuevosErrores.categoria = 'Debe seleccionar una categoría de servicio';
+      nuevosErrores.categoria = "Debe seleccionar una categoría de servicio";
     }
 
     if (!formData.descripcion.trim()) {
-      nuevosErrores.descripcion = 'La descripción es obligatoria';
-    } else if (formData.descripcion.trim().length < 10) {     // *CAMBIO*-----------  
-      nuevosErrores.descripcion = 'La descripción debe tener al menos 10 caracteres';
+      nuevosErrores.descripcion = "La descripción es obligatoria";
+    } else if (formData.descripcion.trim().length < 10) {
+      // *CAMBIO*-----------
+      nuevosErrores.descripcion =
+        "La descripción debe tener al menos 10 caracteres";
     } else if (formData.descripcion.length > 500) {
-      nuevosErrores.descripcion = 'Ingrese una descripción de hasta 500 caracteres';
+      nuevosErrores.descripcion =
+        "Ingrese una descripción de hasta 500 caracteres";
     }
 
     setErrores(nuevosErrores);
@@ -288,39 +341,41 @@ function PanelSolicitante() {
       id_categoria: parseInt(formData.categoria),
       id_ubicacion: idUbicacionUsuario,
       titulo: formData.titulo.trim(),
-      descripcion: formData.descripcion.trim()
+      descripcion: formData.descripcion.trim(),
     };
 
     try {
-      const response = await fetch(`http://localhost:3000/api/clientes/${user.id_cliente}/solicitudes`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify(body)
-      });
+      const response = await fetch(
+        `http://localhost:3000/api/clientes/${user.id_cliente}/solicitudes`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.token}`,
+          },
+          credentials: "include",
+          body: JSON.stringify(body),
+        }
+      );
 
       const result = await response.json();
 
       if (response.ok) {
         alert("Solicitud creada con éxito");
         setFormData({
-          titulo: '',
-          categoria: '',
-          descripcion: '',
-          imagenes: []
+          titulo: "",
+          categoria: "",
+          descripcion: "",
+          imagenes: [],
         });
         setErrores({});
         setShowModal(false);
         // recargar solicitudes...
         const nuevas = await getSolicitudes(user.id_cliente);
         setSolicitudes(nuevas);
-        
       } else {
         alert(result.message("Error al crear solicitud"));
       }
-
     } catch (err) {
       console.error(err);
       alert("Error de conexión");
@@ -329,12 +384,16 @@ function PanelSolicitante() {
 
   const handleCancelar = () => {
     if (formData.titulo || formData.descripcion || formData.categoria) {
-      if (window.confirm('¿Desea cancelar la creación de la solicitud? Los datos no guardados se perderán.')) {
+      if (
+        window.confirm(
+          "¿Desea cancelar la creación de la solicitud? Los datos no guardados se perderán."
+        )
+      ) {
         setFormData({
-          titulo: '',
-          categoria: '',
-          descripcion: '',
-          imagenes: []
+          titulo: "",
+          categoria: "",
+          descripcion: "",
+          imagenes: [],
         });
         setErrores({});
         setShowModal(false);
@@ -346,14 +405,14 @@ function PanelSolicitante() {
 
   const getEstadoBadge = (estado) => {
     const badges = {
-      'Iniciada': 'bg-secondary',
-      'Enviada': 'bg-primary',
-      'Cotizada': 'bg-info',
-      'Pendiente de Calificación': 'bg-warning text-dark',
-      'Cerrada': 'bg-success',
-      'Cancelada': 'bg-danger'
+      Iniciada: "bg-secondary",
+      Enviada: "bg-primary",
+      Cotizada: "bg-info",
+      "Pendiente de Calificación": "bg-warning text-dark",
+      Cerrada: "bg-success",
+      Cancelada: "bg-danger",
     };
-    return badges[estado] || 'bg-secondary';
+    return badges[estado] || "bg-secondary";
   };
 
   return (
@@ -361,7 +420,9 @@ function PanelSolicitante() {
       {/* HEADER */}
       <div className="panel-header">
         <div>
-          <h2 className="mb-1">¡Bienvenido, Juan!</h2>
+          <h2 className="mb-1">
+            ¡Bienvenido, {(user?.nombre_completo || "Usuario").split(" ")[0]} !
+          </h2>
           <p className="text-muted">Gestiona tus solicitudes de servicio</p>
         </div>
         <Button
@@ -380,18 +441,34 @@ function PanelSolicitante() {
           <h4 className="mb-0">
             <i className="bi bi-list-ul me-2"></i>
             Mis Solicitudes
-            <span className="badge bg-secondary ms-2">{solicitudesFiltradas.length}</span>
+            <span className="badge bg-secondary ms-2">
+              {solicitudesFiltradas.length}
+            </span>
           </h4>
           <div className="dropdown">
-            <button className="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+            <button
+              className="btn btn-outline-secondary dropdown-toggle"
+              type="button"
+              data-bs-toggle="dropdown"
+            >
               <i className="bi bi-funnel me-2"></i>
               Filtrar: {filtro}
             </button>
             <ul className="dropdown-menu dropdown-menu-end">
-              {['Todos', 'Iniciada', 'Enviada', 'Cotizada', 'Pendiente de Calificación', 'Cerrada', 'Cancelada'].map((estado) => (
+              {[
+                "Todos",
+                "Iniciada",
+                "Enviada",
+                "Cotizada",
+                "Pendiente de Calificación",
+                "Cerrada",
+                "Cancelada",
+              ].map((estado) => (
                 <li key={estado}>
                   <button
-                    className={`dropdown-item ${filtro === estado ? 'active' : ''}`}
+                    className={`dropdown-item ${
+                      filtro === estado ? "active" : ""
+                    }`}
                     onClick={() => setFiltro(estado)}
                   >
                     {estado}
@@ -412,16 +489,20 @@ function PanelSolicitante() {
                 <div className="card-body">
                   <div className="d-flex justify-content-between align-items-start mb-2">
                     <h5 className="card-title mb-0">{solicitud.titulo}</h5>
-                    <span className={`badge ${getEstadoBadge(solicitud.estado)}`}>
+                    <span
+                      className={`badge ${getEstadoBadge(solicitud.estado)}`}
+                    >
                       {solicitud.estado}
                     </span>
                   </div>
                   <div className="solicitud-meta mb-3">
                     <span className="me-3">
-                      <i className="bi bi-tag me-1"></i>{solicitud.categoria}
+                      <i className="bi bi-tag me-1"></i>
+                      {solicitud.categoria}
                     </span>
                     <span className="me-3">
-                      <i className="bi bi-geo-alt me-1"></i>{solicitud.localidad}
+                      <i className="bi bi-geo-alt me-1"></i>
+                      {solicitud.localidad}
                     </span>
                     <span className="text-muted">
                       <i className="bi bi-clock me-1"></i>Hace {solicitud.hace}
@@ -429,7 +510,7 @@ function PanelSolicitante() {
                   </div>
                   <p className="card-text text-muted">
                     {solicitud.descripcion.length > 100
-                      ? solicitud.descripcion.substring(0, 100) + '...'
+                      ? solicitud.descripcion.substring(0, 100) + "..."
                       : solicitud.descripcion}
                   </p>
                 </div>
@@ -444,11 +525,11 @@ function PanelSolicitante() {
                   >
                     Ver Detalles
                   </Button>
-                  {solicitud.estado === 'Cotizada' && (
+                  {solicitud.estado === "Cotizada" && (
                     <Button
                       variant="warning"
                       size="small"
-                      onClick={handleMostrarPresupuesto}
+                      onClick={() => handleMostrarPresupuesto(solicitud.id)}
                       icon="cash-coin"
                       className="w-100 mt-2"
                     >
@@ -473,7 +554,7 @@ function PanelSolicitante() {
       {showModal && (
         <>
           <div className="modal-backdrop show"></div>
-          <div className="modal show" style={{ display: 'block' }}>
+          <div className="modal show" style={{ display: "block" }}>
             <div className="modal-dialog modal-dialog-centered modal-lg">
               <div className="modal-content">
                 <div className="modal-header">
@@ -481,7 +562,11 @@ function PanelSolicitante() {
                     <i className="bi bi-file-earmark-plus me-2"></i>
                     Crear Nueva Solicitud de Servicio
                   </h5>
-                  <button type="button" className="btn-close" onClick={handleCancelar}></button>
+                  <button
+                    type="button"
+                    className="btn-close"
+                    onClick={handleCancelar}
+                  ></button>
                 </div>
                 <div className="modal-body">
                   <form onSubmit={handleGuardarSolicitud} id="formSolicitud">
@@ -501,20 +586,34 @@ function PanelSolicitante() {
 
                     <div className="row">
                       <div className="mb-3">
-                        <label htmlFor="categoria" className="form-label">Categoría <span className="text-danger">*</span></label>
+                        <label htmlFor="categoria" className="form-label">
+                          Categoría <span className="text-danger">*</span>
+                        </label>
                         <select
-                          className={`form-select ${errores.categoria ? 'is-invalid' : ''}`}
+                          className={`form-select ${
+                            errores.categoria ? "is-invalid" : ""
+                          }`}
                           id="categoria"
                           name="categoria"
                           value={formData.categoria}
                           onChange={handleInputChange}
                         >
                           <option value="">Seleccionar...</option>
-                          {categorias.map(cat => <option key={cat.id_categoria} value={cat.id_categoria}>{cat.nombre}</option>)}
+                          {categorias.map((cat) => (
+                            <option
+                              key={cat.id_categoria}
+                              value={cat.id_categoria}
+                            >
+                              {cat.nombre}
+                            </option>
+                          ))}
                         </select>
-                        {errores.categoria && <div className="invalid-feedback d-block">{errores.categoria}</div>}
+                        {errores.categoria && (
+                          <div className="invalid-feedback d-block">
+                            {errores.categoria}
+                          </div>
+                        )}
                       </div>
-
                     </div>
 
                     <ValidatedInput
@@ -532,15 +631,23 @@ function PanelSolicitante() {
                     />
 
                     <div className="mb-3">
-                      <label htmlFor="imagenes" className="form-label">Imágenes (opcional)</label>
+                      <label htmlFor="imagenes" className="form-label">
+                        Imágenes (opcional)
+                      </label>
                       <input
-                        className={`form-control ${errores.imagenes ? 'is-invalid' : ''}`}
+                        className={`form-control ${
+                          errores.imagenes ? "is-invalid" : ""
+                        }`}
                         type="file"
                         id="imagenes"
                         onChange={handleImageChange}
                         accept=".jpg,.jpeg,.png"
                       />
-                      {errores.imagenes && <div className="invalid-feedback d-block">{errores.imagenes}</div>}
+                      {errores.imagenes && (
+                        <div className="invalid-feedback d-block">
+                          {errores.imagenes}
+                        </div>
+                      )}
                     </div>
                   </form>
                 </div>
@@ -571,35 +678,52 @@ function PanelSolicitante() {
       {showModalPresupuesto && presupuestoSeleccionado && (
         <>
           <div className="modal-backdrop show"></div>
-          <div className="modal show" style={{ display: 'block' }}>
+          <div className="modal show" style={{ display: "block" }}>
             <div className="modal-dialog modal-dialog-centered">
               <div className="modal-content">
                 <div className="modal-header">
                   <h5 className="modal-title">
                     <i className="bi bi-cash-coin me-2"></i>Presupuesto Recibido
                   </h5>
-                  <button type="button" className="btn-close" onClick={() => setShowModalPresupuesto(false)}></button>
+                  <button
+                    type="button"
+                    className="btn-close"
+                    onClick={() => setShowModalPresupuesto(false)}
+                  ></button>
                 </div>
 
                 <div className="modal-body text-center">
-                  <h5 className="mb-3">{presupuestoSeleccionado.nombrePrestador}</h5>
-                  <p className="fw-bold text-success fs-4 mb-3">${presupuestoSeleccionado.monto.toLocaleString()}</p>
-                  <p className="text-muted mb-4">{presupuestoSeleccionado.mensaje}</p>
+                  <h5 className="mb-3">
+                    {presupuestoSeleccionado.prestador?.nombre_completo}
+                  </h5>
+                  <p className="fw-bold text-success fs-4 mb-3">
+                    ${presupuestoSeleccionado.monto?.toLocaleString()}
+                  </p>
+                  <p className="text-muted mb-4">
+                    {presupuestoSeleccionado.mensaje}
+                  </p>
 
                   {!presupuestoAceptado ? (
                     <div className="alert alert-info">
                       <i className="bi bi-info-circle me-2"></i>
-                      ¿Deseas aceptar este presupuesto? Si lo haces, se mostrarán los datos de contacto del prestador.
+                      ¿Deseas aceptar este presupuesto? Si lo haces, se
+                      mostrarán los datos de contacto del prestador.
                     </div>
                   ) : (
                     <div className="alert alert-success text-start">
                       <strong>Datos de contacto del prestador:</strong>
                       <ul className="mt-2">
-                        <li><i className="bi bi-telephone me-2"></i>{presupuestoSeleccionado.contacto.telefono}</li>
-                        <li><i className="bi bi-envelope me-2"></i>{presupuestoSeleccionado.contacto.correo}</li>
+                        <li>
+                          <i className="bi bi-telephone me-2"></i>
+                          {presupuestoSeleccionado.prestador?.telefono}
+                        </li>
                         <li>
                           <i className="bi bi-whatsapp me-2"></i>
-                          <a href={presupuestoSeleccionado.contacto.whatsapp} target="_blank" rel="noreferrer">
+                          <a
+                            href={generarEnlaceWhatsApp(presupuestoSeleccionado.prestador?.telefono)}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
                             Enviar mensaje
                           </a>
                         </li>

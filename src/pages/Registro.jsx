@@ -1,23 +1,31 @@
-import React, { useState, useEffect} from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import { categoriaService } from '../api/api';
-import { getProvincias, getLocalidades } from '../api/georef';
-import { ValidatedInput, PasswordInput, Button, AlertMessage, LoadingSpinner } from '../components/common';
-import '../styles/pages/Auth.css';
-import logo from '../assets/logo_isotipo.png';
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate, Navigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
+import { USER_ROLES } from "../utils/constants";
+import { categoriaService } from "../api/api";
+import { getProvincias, getLocalidades } from "../api/georef";
+import {
+  ValidatedInput,
+  PasswordInput,
+  Button,
+  AlertMessage,
+  LoadingSpinner,
+} from "../components/common";
+import "../styles/pages/Auth.css";
+import logo from "../assets/logo_isotipo.png";
 import {
   generarEnlaceWhatsApp,
   validarRegistroCompleto,
   validarImagenes,
-  politicaContrasena
-} from '../utils/validaciones.js';
+  politicaContrasena,
+} from "../utils/validaciones.js";
+import { crearUbicacion } from "../utils/ubicacion.js";
 
 function Registro() {
   const navigate = useNavigate();
-  const { register } = useAuth();
+  const { register, isAuthenticated, user } = useAuth();
   const [paso, setPaso] = useState(1);
-  const [tipoUsuario, setTipoUsuario] = useState('');
+  const [tipoUsuario, setTipoUsuario] = useState("");
   const [errores, setErrores] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [categorias, setCategorias] = useState([]);
@@ -28,33 +36,33 @@ function Registro() {
 
   // Datos comunes para ambos tipos de usuario
   const [datosComunes, setDatosComunes] = useState({
-    email: '',
-    contrasena: '',
-    confirmarContrasena: '',
-    edad: '',
-    provincia: '',
-    localidad: '',
-    direccion: ''
+    email: "",
+    contrasena: "",
+    confirmarContrasena: "",
+    edad: "",
+    provincia: "",
+    localidad: "",
+    direccion: "",
   });
 
   // Datos específicos del solicitante
   const [datosSolicitante, setDatosSolicitante] = useState({
-    nombreCompleto: ''
+    nombreCompleto: "",
   });
 
   // Datos específicos del prestador
   const [datosPrestador, setDatosPrestador] = useState({
-    nombreCompleto: '',
-    telefono: '',
-    whatsapp: '',
-    descripcion: '',
+    nombreCompleto: "",
+    telefono: "",
+    whatsapp: "",
+    descripcion: "",
     experienciaAnios: 0,
     categorias: [],
-    imagenes: []
+    imagenes: [],
   });
 
   // Estado para búsqueda de categorías
-  const [busquedaCategoria, setBusquedaCategoria] = useState('');
+  const [busquedaCategoria, setBusquedaCategoria] = useState("");
 
   // Cargar datos del backend al montar componente
   useEffect(() => {
@@ -64,21 +72,37 @@ function Registro() {
         // Obtener categorías del back y provincias (GeoRef)
         const [categoriasResponse, provinciasGeoRef] = await Promise.all([
           categoriaService.getAll(),
-          getProvincias()
+          getProvincias(),
         ]);
-        const categoriasData = categoriasResponse.data || categoriasResponse.categorias || [];
+        const categoriasData =
+          categoriasResponse.data || categoriasResponse.categorias || [];
         setCategorias(categoriasData);
         setProvincias(provinciasGeoRef);
       } catch (error) {
         // Fallback en caso de error
         setCategorias([
-          'Plomería', 'Electricidad', 'Pintura', 'Carpintería',
-          'Albañilería', 'Gasista', 'Herrería', 'Jardinería',
-          'Techista', 'Limpieza', 'Refrigeración', 'Aire Acondicionado'
+          "Plomería",
+          "Electricidad",
+          "Pintura",
+          "Carpintería",
+          "Albañilería",
+          "Gasista",
+          "Herrería",
+          "Jardinería",
+          "Techista",
+          "Limpieza",
+          "Refrigeración",
+          "Aire Acondicionado",
         ]);
         setProvincias([
-          'Buenos Aires', 'Córdoba', 'Santa Fe', 'Mendoza',
-          'Tucumán', 'Entre Ríos', 'Salta', 'Chaco'
+          "Buenos Aires",
+          "Córdoba",
+          "Santa Fe",
+          "Mendoza",
+          "Tucumán",
+          "Entre Ríos",
+          "Salta",
+          "Chaco",
         ]);
       } finally {
         setLoadingData(false);
@@ -93,7 +117,9 @@ function Registro() {
       setLoadingLocalidades(true);
       try {
         if (datosComunes.provincia) {
-          const localidadesGeoRef = await getLocalidades(datosComunes.provincia);
+          const localidadesGeoRef = await getLocalidades(
+            datosComunes.provincia
+          );
           setLocalidades(localidadesGeoRef);
         } else {
           setLocalidades([]);
@@ -108,11 +134,13 @@ function Registro() {
   }, [datosComunes.provincia]);
 
   // Filtrar sugerencias de categorías
-  const sugerenciasFiltradas = Array.isArray(categorias) ? categorias.filter(
-    categoria => 
-      categoria.toLowerCase().includes(busquedaCategoria.toLowerCase()) && 
-      !datosPrestador.categorias.includes(categoria)
-  ) : [];
+  const sugerenciasFiltradas = Array.isArray(categorias)
+    ? categorias.filter(
+        (categoria) =>
+          categoria.toLowerCase().includes(busquedaCategoria.toLowerCase()) &&
+          !datosPrestador.categorias.includes(categoria)
+      )
+    : [];
 
   // Seleccionar tipo de usuario
   const seleccionarTipoUsuario = (tipo) => {
@@ -124,16 +152,16 @@ function Registro() {
   // Volver al paso anterior
   const volverAlPaso1 = () => {
     setPaso(1);
-    setTipoUsuario('');
+    setTipoUsuario("");
     setErrores({});
   };
 
   // Limpiar error de un campo específico
   const limpiarError = (nombreCampo) => {
     if (errores[nombreCampo]) {
-      setErrores(erroresAnteriores => ({
+      setErrores((erroresAnteriores) => ({
         ...erroresAnteriores,
-        [nombreCampo]: null
+        [nombreCampo]: null,
       }));
     }
   };
@@ -141,9 +169,9 @@ function Registro() {
   // Manejo de cambios en datos comunes
   const handleComunesChange = (evento) => {
     const { name, value } = evento.target;
-    setDatosComunes(datosAnteriores => ({
+    setDatosComunes((datosAnteriores) => ({
       ...datosAnteriores,
-      [name]: value
+      [name]: value,
     }));
     limpiarError(name);
   };
@@ -151,9 +179,9 @@ function Registro() {
   // Manejo de cambios en datos de solicitante
   const handleSolicitanteChange = (evento) => {
     const { name, value } = evento.target;
-    setDatosSolicitante(datosAnteriores => ({
+    setDatosSolicitante((datosAnteriores) => ({
       ...datosAnteriores,
-      [name]: value
+      [name]: value,
     }));
     limpiarError(name);
   };
@@ -163,40 +191,40 @@ function Registro() {
     const { name, value } = evento.target;
 
     // Si el campo es teléfono, generar automáticamente el enlace de WhatsApp
-    if (name === 'telefono') {
+    if (name === "telefono") {
       const enlaceWhatsApp = generarEnlaceWhatsApp(value);
-      setDatosPrestador(datosAnteriores => ({
+      setDatosPrestador((datosAnteriores) => ({
         ...datosAnteriores,
         [name]: value,
-        whatsapp: enlaceWhatsApp
+        whatsapp: enlaceWhatsApp,
       }));
     } else {
-      setDatosPrestador(datosAnteriores => ({
+      setDatosPrestador((datosAnteriores) => ({
         ...datosAnteriores,
-        [name]: value
+        [name]: value,
       }));
     }
-    
+
     limpiarError(name);
   };
 
   // Agregar categoría para prestador
   const agregarCategoria = (categoria) => {
     if (!datosPrestador.categorias.includes(categoria)) {
-      setDatosPrestador(datosAnteriores => ({
+      setDatosPrestador((datosAnteriores) => ({
         ...datosAnteriores,
-        categorias: [...datosAnteriores.categorias, categoria]
+        categorias: [...datosAnteriores.categorias, categoria],
       }));
-      setBusquedaCategoria('');
-      limpiarError('categorias');
+      setBusquedaCategoria("");
+      limpiarError("categorias");
     }
   };
 
   // Remover categoría para prestador
   const removerCategoria = (categoria) => {
-    setDatosPrestador(datosAnteriores => ({
+    setDatosPrestador((datosAnteriores) => ({
       ...datosAnteriores,
-      categorias: datosAnteriores.categorias.filter(cat => cat !== categoria)
+      categorias: datosAnteriores.categorias.filter((cat) => cat !== categoria),
     }));
   };
 
@@ -206,24 +234,24 @@ function Registro() {
     const erroresValidacion = validarImagenes(archivos);
 
     if (Object.keys(erroresValidacion).length > 0) {
-      setErrores(erroresAnteriores => ({ 
-        ...erroresAnteriores, 
-        ...erroresValidacion 
+      setErrores((erroresAnteriores) => ({
+        ...erroresAnteriores,
+        ...erroresValidacion,
       }));
-      evento.target.value = '';
+      evento.target.value = "";
     } else {
-      setDatosPrestador(datosAnteriores => ({
+      setDatosPrestador((datosAnteriores) => ({
         ...datosAnteriores,
-        imagenes: archivos
+        imagenes: archivos,
       }));
-      limpiarError('imagenes');
+      limpiarError("imagenes");
     }
   };
 
   // Probar enlace de WhatsApp
   const probarWhatsApp = () => {
     if (datosPrestador.whatsapp) {
-      window.open(datosPrestador.whatsapp, '_blank');
+      window.open(datosPrestador.whatsapp, "_blank");
     }
   };
 
@@ -231,8 +259,13 @@ function Registro() {
   const handleSubmit = async (evento) => {
     evento.preventDefault();
 
-    const datosEspecificos = tipoUsuario === 'solicitante' ? datosSolicitante : datosPrestador;
-    const erroresValidacion = validarRegistroCompleto(tipoUsuario, datosComunes, datosEspecificos);
+    const datosEspecificos =
+      tipoUsuario === "solicitante" ? datosSolicitante : datosPrestador;
+    const erroresValidacion = validarRegistroCompleto(
+      tipoUsuario,
+      datosComunes,
+      datosEspecificos
+    );
 
     setErrores(erroresValidacion);
 
@@ -241,64 +274,111 @@ function Registro() {
       setErrores({});
 
       try {
+        
+        console.log("🌍 Enviando ubicación:", {
+          provincia: datosComunes.provincia,
+          localidad: datosComunes.localidad,
+          direccion: datosComunes.direccion,
+        });
+
+        const ubicacionId = await crearUbicacion({
+          provincia: datosComunes.provincia,
+          localidad: datosComunes.localidad,
+          direccion: datosComunes.direccion,
+        });
         // Construir datos base
         const datosBase = {
           email: datosComunes.email,
           password: datosComunes.contrasena,
-          fechaNacimiento: datosComunes.edad ? new Date(new Date().getFullYear() - parseInt(datosComunes.edad), 0, 1).toISOString().split('T')[0] : null,
-          ubicacionId: 1 // Temporalmente fijo, backend debe manejar esto
+          fechaNacimiento: datosComunes.edad
+            ? new Date(
+                new Date().getFullYear() - parseInt(datosComunes.edad),
+                0,
+                1
+              )
+                .toISOString()
+                .split("T")[0]
+            : null,
+          ubicacionId,
         };
 
         // Agregar datos específicos según el tipo de usuario
-        const datosRegistro = tipoUsuario === 'solicitante' ? {
-          ...datosBase,
-          nombreCompleto: datosSolicitante.nombreCompleto,
-          userType: 'solicitante' // Agregar userType para el mapeo
-        } : {
-          ...datosBase,
-          nombreCompleto: datosPrestador.nombreCompleto,
-          telefono: datosPrestador.telefono,
-          descripcion: datosPrestador.descripcion,
-          experiencia: parseInt(datosPrestador.experienciaAnios) || 0,
-          categorias: datosPrestador.categorias,
-          userType: 'prestador' // Agregar userType para el mapeo
-        };
+        const datosRegistro =
+          tipoUsuario === "solicitante"
+            ? {
+                ...datosBase,
+                nombreCompleto: datosSolicitante.nombreCompleto,
+                userType: "solicitante", // Agregar userType para el mapeo
+              }
+            : {
+                ...datosBase,
+                nombreCompleto: datosPrestador.nombreCompleto,
+                telefono: datosPrestador.telefono,
+                descripcion: datosPrestador.descripcion,
+                experiencia: parseInt(datosPrestador.experienciaAnios) || 0,
+                categorias: datosPrestador.categorias,
+                userType: "prestador", // Agregar userType para el mapeo
+              };
 
-      const resultado = await register(datosRegistro, tipoUsuario);
-      
-      // Registro exitoso - redirigir según el tipo y si hay token
-      if (resultado.token) {
-        // Auto-login exitoso, dar un pequeño delay para que el estado se actualice
-        setTimeout(() => {
-          if(tipoUsuario === 'solicitante'){
-            navigate('/panel-solicitante');
-          } else {
-            navigate('/panel-prestador');
-          }
-        }, 100);
-      } else {
-        // Registro exitoso pero sin token, redirigir al login
-        navigate('/login', { 
-          state: { 
-            message: 'Registro exitoso. Por favor, inicia sesión.',
-            email: datosRegistro.email
-          }
+        const resultado = await register(datosRegistro, tipoUsuario);
+
+        // Registro exitoso - redirigir según el tipo y si hay token
+        if (resultado.token) {
+          // Auto-login exitoso, dar un pequeño delay para que el estado se actualice
+          setTimeout(() => {
+            if (tipoUsuario === "solicitante") {
+              navigate("/panel-solicitante");
+            } else {
+              navigate("/panel-prestador");
+            }
+          }, 100);
+        } else {
+          // Registro exitoso pero sin token, redirigir al login
+          navigate("/login", {
+            state: {
+              message: "Registro exitoso. Por favor, inicia sesión.",
+              email: datosRegistro.email,
+            },
+          });
+        }
+      } catch (error) {
+        setErrores({
+          general:
+            error.message ||
+            "Error al registrarse. Por favor, intentá nuevamente.",
         });
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error) {
-      setErrores({
-        general: error.message || 'Error al registrarse. Por favor, intentá nuevamente.'
-      });
-    } finally {
-      setIsLoading(false);
-    }
     }
   };
 
-if (loadingData) {
+      // Si el usuario ya está autenticado, no permitir acceder a registro
+      if (isAuthenticated && user) {
+        const rol = user.rol ? user.rol.toLowerCase() : '';
+
+        if (rol === USER_ROLES.CLIENTE_LOWER) {
+          return <Navigate to="/panel-solicitante" replace />;
+        }
+
+        if (rol === USER_ROLES.PRESTADOR_LOWER) {
+          return <Navigate to="/panel-prestador" replace />;
+        }
+
+        if (rol === USER_ROLES.ADMIN_LOWER) {
+          return <Navigate to="/admin" replace />;
+        }
+
+        return <Navigate to="/" replace />;
+      }
+
+  if (loadingData) {
     return (
       <div className="auth-page">
-        <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '400px' }}>
+        <div
+          className="d-flex justify-content-center align-items-center"
+          style={{ minHeight: "400px" }}
+        >
           <div className="text-center">
             <LoadingSpinner size="large" />
             <p>Cargando datos...</p>
@@ -327,16 +407,18 @@ if (loadingData) {
         </div>
 
         <div className="auth-card">
-          <h2 className="text-center mb-3">¿Qué tipo de cuenta querés crear?</h2>
+          <h2 className="text-center mb-3">
+            ¿Qué tipo de cuenta querés crear?
+          </h2>
           <p className="text-center text-muted mb-4">
             Elegí la opción que mejor describa tu necesidad
           </p>
 
           <div className="row g-3">
             <div className="col-md-6">
-              <div 
-                className="card tipo-usuario-card h-100" 
-                onClick={() => seleccionarTipoUsuario('solicitante')}
+              <div
+                className="card tipo-usuario-card h-100"
+                onClick={() => seleccionarTipoUsuario("solicitante")}
               >
                 <div className="card-body text-center">
                   <i className="bi bi-person-check display-1 text-primary mb-3"></i>
@@ -345,18 +427,27 @@ if (loadingData) {
                     Busco contratar servicios para mi hogar o negocio
                   </p>
                   <ul className="list-unstyled text-start small">
-                    <li><i className="bi bi-check text-success me-2"></i>Publicar solicitudes</li>
-                    <li><i className="bi bi-check text-success me-2"></i>Recibir presupuestos</li>
-                    <li><i className="bi bi-check text-success me-2"></i>Contactar prestadores</li>
+                    <li>
+                      <i className="bi bi-check text-success me-2"></i>Publicar
+                      solicitudes
+                    </li>
+                    <li>
+                      <i className="bi bi-check text-success me-2"></i>Recibir
+                      presupuestos
+                    </li>
+                    <li>
+                      <i className="bi bi-check text-success me-2"></i>Contactar
+                      prestadores
+                    </li>
                   </ul>
                 </div>
               </div>
             </div>
 
             <div className="col-md-6">
-              <div 
-                className="card tipo-usuario-card h-100" 
-                onClick={() => seleccionarTipoUsuario('prestador')}
+              <div
+                className="card tipo-usuario-card h-100"
+                onClick={() => seleccionarTipoUsuario("prestador")}
               >
                 <div className="card-body text-center">
                   <i className="bi bi-tools display-1 text-success mb-3"></i>
@@ -365,9 +456,18 @@ if (loadingData) {
                     Ofrezco servicios profesionales y quiero conseguir clientes
                   </p>
                   <ul className="list-unstyled text-start small">
-                    <li><i className="bi bi-check text-success me-2"></i>Recibir solicitudes</li>
-                    <li><i className="bi bi-check text-success me-2"></i>Enviar presupuestos</li>
-                    <li><i className="bi bi-check text-success me-2"></i>Mostrar trabajos</li>
+                    <li>
+                      <i className="bi bi-check text-success me-2"></i>Recibir
+                      solicitudes
+                    </li>
+                    <li>
+                      <i className="bi bi-check text-success me-2"></i>Enviar
+                      presupuestos
+                    </li>
+                    <li>
+                      <i className="bi bi-check text-success me-2"></i>Mostrar
+                      trabajos
+                    </li>
                   </ul>
                 </div>
               </div>
@@ -376,7 +476,7 @@ if (loadingData) {
 
           <div className="text-center mt-4">
             <p>
-              ¿Ya tenés cuenta?{' '}
+              ¿Ya tenés cuenta?{" "}
               <Link to="/login" className="auth-link">
                 Iniciá sesión
               </Link>
@@ -407,8 +507,8 @@ if (loadingData) {
       <div className="auth-card auth-card-large">
         {/* Header del formulario */}
         <div className="d-flex align-items-center mb-4">
-          <Button 
-            variant="outline-secondary" 
+          <Button
+            variant="outline-secondary"
             size="medium"
             onClick={volverAlPaso1}
             icon="arrow-left"
@@ -416,7 +516,8 @@ if (loadingData) {
           />
           <div>
             <h2 className="mb-0">
-              Registro como {tipoUsuario === 'solicitante' ? 'Solicitante' : 'Prestador'}
+              Registro como{" "}
+              {tipoUsuario === "solicitante" ? "Solicitante" : "Prestador"}
             </h2>
             <p className="text-muted mb-0">
               Completá tus datos para crear tu cuenta
@@ -425,10 +526,10 @@ if (loadingData) {
         </div>
 
         {errores.general && (
-          <AlertMessage 
-            type="error" 
-            message={errores.general} 
-            icon="exclamation-triangle" 
+          <AlertMessage
+            type="error"
+            message={errores.general}
+            icon="exclamation-triangle"
           />
         )}
 
@@ -440,14 +541,16 @@ if (loadingData) {
               Datos Personales
             </div>
             <div className="card-body">
-              {tipoUsuario === 'solicitante' ? (
+              {tipoUsuario === "solicitante" ? (
                 <div className="mb-3">
                   <label htmlFor="nombreCompleto" className="form-label">
                     Nombre Completo <span className="text-danger">*</span>
                   </label>
-                  <input 
-                    type="text" 
-                    className={`form-control ${errores.nombreCompleto ? 'is-invalid' : ''}`}
+                  <input
+                    type="text"
+                    className={`form-control ${
+                      errores.nombreCompleto ? "is-invalid" : ""
+                    }`}
                     id="nombreCompleto"
                     name="nombreCompleto"
                     value={datosSolicitante.nombreCompleto}
@@ -455,17 +558,24 @@ if (loadingData) {
                     placeholder="Juan Pérez"
                   />
                   {errores.nombreCompleto && (
-                    <div className="invalid-feedback">{errores.nombreCompleto}</div>
+                    <div className="invalid-feedback">
+                      {errores.nombreCompleto}
+                    </div>
                   )}
                 </div>
               ) : (
                 <div className="mb-3">
-                  <label htmlFor="nombreCompletoPrestador" className="form-label">
+                  <label
+                    htmlFor="nombreCompletoPrestador"
+                    className="form-label"
+                  >
                     Nombre completo <span className="text-danger">*</span>
                   </label>
-                  <input 
-                    type="text" 
-                    className={`form-control ${errores.nombreCompleto ? 'is-invalid' : ''}`}
+                  <input
+                    type="text"
+                    className={`form-control ${
+                      errores.nombreCompleto ? "is-invalid" : ""
+                    }`}
                     id="nombreCompletoPrestador"
                     name="nombreCompleto"
                     value={datosPrestador.nombreCompleto}
@@ -474,7 +584,9 @@ if (loadingData) {
                     maxLength="100"
                   />
                   {errores.nombreCompleto && (
-                    <div className="invalid-feedback">{errores.nombreCompleto}</div>
+                    <div className="invalid-feedback">
+                      {errores.nombreCompleto}
+                    </div>
                   )}
                 </div>
               )}
@@ -493,14 +605,17 @@ if (loadingData) {
                 helpText="Debés ser mayor de 18 años"
               />
 
-              {tipoUsuario === 'prestador' && (
+              {tipoUsuario === "prestador" && (
                 <>
                   <div className="mb-3">
                     <label htmlFor="descripcion" className="form-label">
-                      Descripción de servicios <span className="text-muted">(opcional)</span>
+                      Descripción de servicios{" "}
+                      <span className="text-muted">(opcional)</span>
                     </label>
-                    <textarea 
-                      className={`form-control ${errores.descripcion ? 'is-invalid' : ''}`}
+                    <textarea
+                      className={`form-control ${
+                        errores.descripcion ? "is-invalid" : ""
+                      }`}
                       id="descripcion"
                       name="descripcion"
                       value={datosPrestador.descripcion}
@@ -509,22 +624,26 @@ if (loadingData) {
                       placeholder="Describí tu experiencia y servicios..."
                     ></textarea>
                     <small className="text-muted">
-                      {datosPrestador.descripcion.length > 0 ? 
-                        `${datosPrestador.descripcion.length}/500 caracteres` :
-                        'Mínimo 20 caracteres (opcional)'
-                      }
+                      {datosPrestador.descripcion.length > 0
+                        ? `${datosPrestador.descripcion.length}/500 caracteres`
+                        : "Mínimo 20 caracteres (opcional)"}
                     </small>
                     {errores.descripcion && (
-                      <div className="invalid-feedback d-block">{errores.descripcion}</div>
+                      <div className="invalid-feedback d-block">
+                        {errores.descripcion}
+                      </div>
                     )}
                   </div>
 
                   <div className="mb-3">
                     <label htmlFor="experienciaAnios" className="form-label">
-                      Años de experiencia <span className="text-muted">(opcional)</span>
+                      Años de experiencia{" "}
+                      <span className="text-muted">(opcional)</span>
                     </label>
                     <select
-                      className={`form-select ${errores.experienciaAnios ? 'is-invalid' : ''}`}
+                      className={`form-select ${
+                        errores.experienciaAnios ? "is-invalid" : ""
+                      }`}
                       id="experienciaAnios"
                       name="experienciaAnios"
                       value={datosPrestador.experienciaAnios}
@@ -543,10 +662,13 @@ if (loadingData) {
                       <option value="21">Más de 20 años</option>
                     </select>
                     <small className="text-muted">
-                      Seleccioná los años de experiencia que tenés en el oficio (opcional)
+                      Seleccioná los años de experiencia que tenés en el oficio
+                      (opcional)
                     </small>
                     {errores.experienciaAnios && (
-                      <div className="invalid-feedback d-block">{errores.experienciaAnios}</div>
+                      <div className="invalid-feedback d-block">
+                        {errores.experienciaAnios}
+                      </div>
                     )}
                   </div>
                 </>
@@ -567,7 +689,9 @@ if (loadingData) {
                     Provincia <span className="text-danger">*</span>
                   </label>
                   <select
-                    className={`form-select ${errores.provincia ? 'is-invalid' : ''}`}
+                    className={`form-select ${
+                      errores.provincia ? "is-invalid" : ""
+                    }`}
                     id="provincia"
                     name="provincia"
                     value={datosComunes.provincia}
@@ -575,7 +699,9 @@ if (loadingData) {
                   >
                     <option value="">Seleccioná una provincia</option>
                     {provincias.map((provincia) => (
-                      <option key={provincia} value={provincia}>{provincia}</option>
+                      <option key={provincia} value={provincia}>
+                        {provincia}
+                      </option>
                     ))}
                   </select>
                   {errores.provincia && (
@@ -588,21 +714,30 @@ if (loadingData) {
                     Localidad <span className="text-danger">*</span>
                   </label>
                   {loadingLocalidades ? (
-                    <div className="form-control bg-light text-muted" style={{ minHeight: 38 }}>
+                    <div
+                      className="form-control bg-light text-muted"
+                      style={{ minHeight: 38 }}
+                    >
                       Cargando localidades...
                     </div>
                   ) : (
                     <select
-                      className={`form-select ${errores.localidad ? 'is-invalid' : ''}`}
+                      className={`form-select ${
+                        errores.localidad ? "is-invalid" : ""
+                      }`}
                       id="localidad"
                       name="localidad"
                       value={datosComunes.localidad}
                       onChange={handleComunesChange}
-                      disabled={!datosComunes.provincia || localidades.length === 0}
+                      disabled={
+                        !datosComunes.provincia || localidades.length === 0
+                      }
                     >
                       <option value="">Seleccioná una localidad</option>
                       {localidades.map((localidad) => (
-                        <option key={localidad} value={localidad}>{localidad}</option>
+                        <option key={localidad} value={localidad}>
+                          {localidad}
+                        </option>
                       ))}
                     </select>
                   )}
@@ -616,8 +751,8 @@ if (loadingData) {
                 <label htmlFor="direccion" className="form-label">
                   Dirección <span className="text-muted">(opcional)</span>
                 </label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   className="form-control"
                   id="direccion"
                   name="direccion"
@@ -626,14 +761,15 @@ if (loadingData) {
                   placeholder="Av. Corrientes 1234"
                 />
                 <small className="text-muted">
-                  La dirección completa es opcional y no se mostrará públicamente
+                  La dirección completa es opcional y no se mostrará
+                  públicamente
                 </small>
               </div>
             </div>
           </div>
 
           {/* CATEGORÍAS */}
-          {tipoUsuario === 'prestador' && (
+          {tipoUsuario === "prestador" && (
             <div className="card mb-4">
               <div className="card-header">
                 <i className="bi bi-tools me-2"></i>
@@ -644,18 +780,22 @@ if (loadingData) {
                   Especialidades <span className="text-danger">*</span>
                 </label>
                 <div className="position-relative mb-3">
-                  <input 
+                  <input
                     type="text"
-                    className={`form-control ${errores.categorias ? 'is-invalid' : ''}`}
+                    className={`form-control ${
+                      errores.categorias ? "is-invalid" : ""
+                    }`}
                     placeholder="Buscá: Electricidad, Plomería..."
                     value={busquedaCategoria}
-                    onChange={(evento) => setBusquedaCategoria(evento.target.value)}
+                    onChange={(evento) =>
+                      setBusquedaCategoria(evento.target.value)
+                    }
                   />
                   {busquedaCategoria && sugerenciasFiltradas.length > 0 && (
                     <ul className="list-group position-absolute w-100 sugerencias-list">
-                      {sugerenciasFiltradas.map(categoria => (
-                        <li 
-                          key={categoria} 
+                      {sugerenciasFiltradas.map((categoria) => (
+                        <li
+                          key={categoria}
                           className="list-group-item list-group-item-action"
                           onClick={() => agregarCategoria(categoria)}
                         >
@@ -666,20 +806,22 @@ if (loadingData) {
                     </ul>
                   )}
                   {errores.categorias && (
-                    <div className="invalid-feedback d-block">{errores.categorias}</div>
+                    <div className="invalid-feedback d-block">
+                      {errores.categorias}
+                    </div>
                   )}
                 </div>
 
                 {/* Categorías seleccionadas */}
                 {datosPrestador.categorias.length > 0 ? (
                   <div className="d-flex flex-wrap gap-2">
-                    {datosPrestador.categorias.map(categoria => (
+                    {datosPrestador.categorias.map((categoria) => (
                       <span key={categoria} className="badge badge-categoria">
                         <i className="bi bi-tools me-1"></i>
                         {categoria}
-                        <button 
-                          type="button" 
-                          className="btn-close btn-close-white ms-2" 
+                        <button
+                          type="button"
+                          className="btn-close btn-close-white ms-2"
                           onClick={() => removerCategoria(categoria)}
                           aria-label={`Remover ${categoria}`}
                         ></button>
@@ -687,14 +829,16 @@ if (loadingData) {
                     ))}
                   </div>
                 ) : (
-                  <small className="text-muted">No seleccionaste ninguna especialidad</small>
+                  <small className="text-muted">
+                    No seleccionaste ninguna especialidad
+                  </small>
                 )}
               </div>
             </div>
           )}
 
           {/* CONTACTO */}
-          {tipoUsuario === 'prestador' && (
+          {tipoUsuario === "prestador" && (
             <div className="card mb-4">
               <div className="card-header">
                 <i className="bi bi-telephone-fill me-2"></i>
@@ -719,18 +863,23 @@ if (loadingData) {
 
                   <div className="col-md-6 mb-3">
                     <label htmlFor="whatsapp" className="form-label">
-                      WhatsApp <span className="text-success">(generado automáticamente)</span>
+                      WhatsApp{" "}
+                      <span className="text-success">
+                        (generado automáticamente)
+                      </span>
                     </label>
                     <div className="input-group">
-                      <input 
-                        type="url" 
-                        className={`form-control ${errores.whatsapp ? 'is-invalid' : ''}`}
+                      <input
+                        type="url"
+                        className={`form-control ${
+                          errores.whatsapp ? "is-invalid" : ""
+                        }`}
                         id="whatsapp"
                         name="whatsapp"
                         value={datosPrestador.whatsapp}
                         readOnly
                         placeholder="Enlace generado automáticamente..."
-                        style={{ backgroundColor: '#f8f9fa' }}
+                        style={{ backgroundColor: "#f8f9fa" }}
                       />
                       {datosPrestador.whatsapp && (
                         <button
@@ -744,7 +893,9 @@ if (loadingData) {
                       )}
                     </div>
                     {errores.whatsapp && (
-                      <div className="invalid-feedback d-block">{errores.whatsapp}</div>
+                      <div className="invalid-feedback d-block">
+                        {errores.whatsapp}
+                      </div>
                     )}
                     {datosPrestador.whatsapp && (
                       <small className="text-success">
@@ -754,7 +905,7 @@ if (loadingData) {
                     )}
                   </div>
                 </div>
-              
+
                 {/* Vista previa del enlace de WhatsApp */}
                 {datosPrestador.telefono && datosPrestador.whatsapp && (
                   <div className="alert alert-info mt-3">
@@ -766,7 +917,8 @@ if (loadingData) {
                         <code className="small">{datosPrestador.whatsapp}</code>
                         <br />
                         <small className="text-muted">
-                          Los clientes podrán contactarte directamente por WhatsApp
+                          Los clientes podrán contactarte directamente por
+                          WhatsApp
                         </small>
                       </div>
                       <button
@@ -785,16 +937,19 @@ if (loadingData) {
           )}
 
           {/* GALERÍA */}
-          {tipoUsuario === 'prestador' && (
+          {tipoUsuario === "prestador" && (
             <div className="card mb-4">
               <div className="card-header">
                 <i className="bi bi-images me-2"></i>
-                Galería de trabajos <span className="text-muted">(opcional)</span>
+                Galería de trabajos{" "}
+                <span className="text-muted">(opcional)</span>
               </div>
               <div className="card-body">
-                <input 
-                  className={`form-control ${errores.imagenes ? 'is-invalid' : ''}`}
-                  type="file" 
+                <input
+                  className={`form-control ${
+                    errores.imagenes ? "is-invalid" : ""
+                  }`}
+                  type="file"
                   id="imagenes"
                   onChange={handleImagenesChange}
                   accept=".jpg,.jpeg,.png"
@@ -803,7 +958,9 @@ if (loadingData) {
                   Máximo 1 imagen. JPG, JPEG, PNG. Máximo 5MB cada una.
                 </small>
                 {errores.imagenes && (
-                  <div className="invalid-feedback d-block">{errores.imagenes}</div>
+                  <div className="invalid-feedback d-block">
+                    {errores.imagenes}
+                  </div>
                 )}
                 {datosPrestador.imagenes.length > 0 && (
                   <div className="alert alert-success mt-2">
@@ -844,12 +1001,16 @@ if (loadingData) {
                     placeholder="********"
                     required
                   />
-                  
+
                   {/* Política de seguridad */}
                   <div className="mt-2">
-                    <small className="text-muted d-block mb-1"><strong>Política de seguridad:</strong></small>
+                    <small className="text-muted d-block mb-1">
+                      <strong>Política de seguridad:</strong>
+                    </small>
                     {politicaContrasena.map((regla, index) => (
-                      <small key={index} className="text-muted d-block">• {regla}</small>
+                      <small key={index} className="text-muted d-block">
+                        • {regla}
+                      </small>
                     ))}
                   </div>
                 </div>
@@ -860,7 +1021,9 @@ if (loadingData) {
                     label="Confirmar Contraseña"
                     value={datosComunes.confirmarContrasena}
                     onChange={handleComunesChange}
-                    error={errores.confirmarContrasena || errores.confirmPassword}
+                    error={
+                      errores.confirmarContrasena || errores.confirmPassword
+                    }
                     placeholder="********"
                     required
                     helpText="Las contraseñas deben coincidir"
@@ -872,8 +1035,8 @@ if (loadingData) {
 
           {/* BOTONES */}
           <div className="d-grid gap-2 d-md-flex justify-content-md-end">
-            <Button 
-              variant="outline-secondary" 
+            <Button
+              variant="outline-secondary"
               size="medium"
               onClick={volverAlPaso1}
               icon="arrow-left"
@@ -881,8 +1044,8 @@ if (loadingData) {
             >
               Volver
             </Button>
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               variant="success"
               size="large"
               loading={isLoading}
@@ -896,7 +1059,7 @@ if (loadingData) {
 
           <div className="text-center mt-3">
             <p>
-              ¿Ya tenés cuenta?{' '}
+              ¿Ya tenés cuenta?{" "}
               <Link to="/login" className="auth-link">
                 Iniciá sesión
               </Link>

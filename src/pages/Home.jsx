@@ -1,5 +1,7 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import { USER_ROLES } from '../utils/constants';
 import imagenComoFunciona from '../assets/diseno-de-collage-de-personas.jpg';
 import videoHeroBackground from '../assets/video-trabajo.mp4';
 import { categoriasDisponibles } from '../utils/validaciones.js';
@@ -10,6 +12,26 @@ import '../styles/pages/Home.css';
 function Home() {
 
   const navigate = useNavigate();
+  const { user, isAuthenticated } = useAuth();
+
+  // Si ya está autenticado, redirigir al panel correspondiente
+  if (isAuthenticated && user) {
+    const rol = user.rol ? user.rol.toLowerCase() : '';
+
+    if (rol === USER_ROLES.CLIENTE_LOWER) {
+      return <Navigate to="/panel-solicitante" replace />;
+    }
+
+    if (rol === USER_ROLES.PRESTADOR_LOWER) {
+      return <Navigate to="/panel-prestador" replace />;
+    }
+
+    if (rol === USER_ROLES.ADMIN_LOWER) {
+      return <Navigate to="/admin" replace />;
+    }
+
+    return <Navigate to="/" replace />;
+  }
 
   const handleNavigate = (path) => {
     navigate(path);
