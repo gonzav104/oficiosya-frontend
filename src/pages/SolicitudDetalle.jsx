@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react'; // *CAMBIO*----------------------
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '../components/common';
+import { getSolicitudes, getPrestadores, getPrestadoresCercanos } from '../utils/solicitudes'; // CAMBIO------------------------------
+import { useAuth } from '../contexts/AuthContext'; // *CAMBIO*----------------------
 import '../styles/pages/SolicitudDetalle.css';
-
+/*
 // Datos de prueba
 const solicitudesFalsas = [
   { id: 1, titulo: 'Reparación de canilla en cocina', categoria: 'Plomería', localidad: 'Baradero', estado: 'Iniciada', fechaCreacion: '15/01/2025', descripcion: 'Se necesita reparar una canilla que pierde agua constantemente.', imagenes: [] },
@@ -10,7 +12,7 @@ const solicitudesFalsas = [
   { id: 3, titulo: 'Pintura de fachada', categoria: 'Pintura', localidad: 'Ramallo', estado: 'Cotizada', fechaCreacion: '13/01/2025', descripcion: 'Pintar la fachada de una casa de 2 pisos.', imagenes: [] },
   { id: 4, titulo: 'Arreglo de enchufe', categoria: 'Electricidad', localidad: 'San Pedro', estado: 'Pendiente de Calificación', fechaCreacion: '10/01/2025', descripcion: 'Un enchufe dejó de funcionar en la sala de estar.', imagenes: [] },
   { id: 5, titulo: 'Revisión de instalación de gas', categoria: 'Gasista', localidad: 'Baradero', estado: 'Cerrada', fechaCreacion: '20/12/2024', descripcion: 'Necesito revisión completa de la instalación de gas natural.', imagenes: [] },
-];
+]; 
 
 const prestadoresRecomendadosPorSolicitud = {
   1: [
@@ -23,7 +25,8 @@ const prestadoresRecomendadosPorSolicitud = {
   2: [],
   3: [],
   4: [],
-};
+}; 
+*/
 
 // Prestadores a los que se les envió presupuesto (para estado "Enviada")
 const prestadoresEnviados = {
@@ -33,12 +36,14 @@ const prestadoresEnviados = {
   ],
 };
 
+/*
 const prestadoresCercanos = {
   3: [
     { id: 106, nombrePublico: 'Roberto Gómez', categoria: 'Pintura', localidad: 'San Pedro', calificacionPromedio: 4.6, cantidadResenas: 45, trabajosRealizados: 52, experiencia: '6 años de experiencia', foto: '👨‍🎨', distancia: '15 km' },
     { id: 107, nombrePublico: 'Martín López', categoria: 'Pintura', localidad: 'Baradero', calificacionPromedio: 4.5, cantidadResenas: 38, trabajosRealizados: 41, experiencia: '4 años de experiencia', foto: '👨‍🎨', distancia: '20 km' },
   ],
 };
+*/
 
 const presupuestosPorSolicitud = {
   3: [
@@ -85,9 +90,52 @@ function SolicitudDetalle() {
   const [calificacion, setCalificacion] = useState(0);
   const [comentarioCalificacion, setComentarioCalificacion] = useState('');
 
-  const solicitud = solicitudesFalsas.find((s) => s.id === parseInt(id));
-  const prestadoresRecomendados = prestadoresRecomendadosPorSolicitud[parseInt(id)] || [];
-  const prestadoresEnZonasCercanas = prestadoresCercanos[parseInt(id)] || [];
+  //--------------------------------------------------------------
+
+  const [prestadoresRecomendados, setPrestadoresRecomendados] = useState([]);
+  const [prestadoresEnZonasCercanas, setPrestadoresEnZonasCercanas] = useState([]);
+  const [prestadoresCargados, setPrestadoresCargados] = useState(false);
+  const [solicitudes, setSolicitudes] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (!user?.id_cliente) {
+      setSolicitudes([]);
+      return;
+    }
+
+    async function cargarSolicitudes() {
+      setLoading(true);
+      const data = await getSolicitudes(user.id_cliente);
+      setSolicitudes(data);
+      setLoading(false);
+    }
+
+    cargarSolicitudes();
+  }, [user?.id_cliente]);
+
+  useEffect(() => {
+    if (!id) return;
+
+    async function cargarPrestadores() {
+      setLoading(true);
+      const recomendados = await getPrestadores(id);
+      const cercanos = await getPrestadoresCercanos(id);
+
+      setPrestadoresRecomendados(recomendados);
+      setPrestadoresEnZonasCercanas(cercanos);
+
+      setPrestadoresCargados(true);
+      setLoading(false);
+    }
+
+    cargarPrestadores();
+  }, [id]);
+
+  //--------------------------------------------------------------
+
+  const solicitud = solicitudes.find((s) => s.id === parseInt(id)); // CAMBIO------------------------------
   const prestadoresEnviadosLista = prestadoresEnviados[parseInt(id)] || [];
   const presupuestosRecibidos = presupuestosPorSolicitud[parseInt(id)] || [];
 
@@ -115,8 +163,8 @@ function SolicitudDetalle() {
   const prestadoresMostrados = buscarCercanos
     ? prestadoresEnZonasCercanas
     : mostrarTodos
-    ? prestadoresRecomendados
-    : prestadoresRecomendados.slice(0, 3);
+      ? prestadoresRecomendados
+      : prestadoresRecomendados.slice(0, 3);
 
   const renderEstrellas = (calificacion) => {
     const estrellas = [];
@@ -148,7 +196,7 @@ function SolicitudDetalle() {
         whatsapp: 'https://wa.me/5491198765432',
       }
     };
-    
+
     setPresupuestoSeleccionado(presupuestoConContacto);
     setPresupuestoAceptado(true);
     alert('Presupuesto aceptado. Se muestran los datos de contacto del prestador.');
@@ -168,7 +216,7 @@ function SolicitudDetalle() {
       alert('Por favor selecciona una calificación de 1 a 5 estrellas.');
       return;
     }
-    
+
     alert(`Calificación enviada: ${calificacion} estrellas. ¡Gracias por tu feedback!`);
     setMostrarModalCalificacion(false);
     setCalificacion(0);
@@ -184,7 +232,7 @@ function SolicitudDetalle() {
           key={i}
           className={`bi ${i <= rating ? 'bi-star-fill' : 'bi-star'} estrella-calificacion`}
           onClick={() => setRating(i)}
-          style={{ 
+          style={{
             cursor: 'pointer',
             color: i <= rating ? '#ffc107' : '#dee2e6',
             fontSize: '2rem',
@@ -211,20 +259,19 @@ function SolicitudDetalle() {
               <div className="solicitud-meta">
                 <span className="badge bg-secondary me-2">{solicitud.categoria}</span>
                 <span className="badge bg-info me-2">{solicitud.localidad}</span>
-                <span className="badge bg-light text-dark">{solicitud.fechaCreacion}</span>
+                <span className="badge bg-light text-dark">{new Date(solicitud.fechaCreacion).toLocaleDateString()}</span>
               </div>
             </div>
-            <span className={`badge-estado ${
-              solicitud.estado === 'Iniciada'
-                ? 'bg-secondary'
-                : solicitud.estado === 'Enviada'
+            <span className={`badge-estado ${solicitud.estado === 'Iniciada'
+              ? 'bg-secondary'
+              : solicitud.estado === 'Enviada'
                 ? 'bg-primary'
                 : solicitud.estado === 'Cotizada'
-                ? 'bg-info'
-                : solicitud.estado === 'Pendiente de Calificación'
-                ? 'bg-warning text-dark'
-                : 'bg-success'
-            }`}>{solicitud.estado}</span>
+                  ? 'bg-info'
+                  : solicitud.estado === 'Pendiente de Calificación'
+                    ? 'bg-warning text-dark'
+                    : 'bg-success'
+              }`}>{solicitud.estado}</span>
           </div>
         </div>
         <div className="card-body">
@@ -240,45 +287,52 @@ function SolicitudDetalle() {
             <h4>{buscarCercanos ? 'Prestadores en Zonas Cercanas' : 'Prestadores Recomendados'}</h4>
           </div>
 
-          {prestadoresMostrados.length > 0 ? (
-            <>
-              <div className="row g-4">
-                {prestadoresMostrados.map((p) => (
-                  <div key={p.id} className="col-md-6 col-lg-4">
-                    <div className="card prestador-card h-100">
-                      <div className="card-body text-center">
-                        <div className="prestador-avatar mb-2">{p.foto}</div>
-                        <h5>{p.nombrePublico}</h5>
-                        <p className="text-muted">{p.categoria} • {p.localidad}</p>
-                        <div>{renderEstrellas(p.calificacionPromedio)}</div>
-                        <small className="text-muted d-block mb-2">
-                          {p.cantidadResenas} reseñas • {p.trabajosRealizados} trabajos
-                        </small>
-                        <div className="info-box mb-3">{p.experiencia}</div>
-                        <div className="d-grid gap-2">
-                          <Button variant="outline-primary" onClick={() => navigate(`/perfil/${p.id}`)}>
-                            Ver Perfil
-                          </Button>
-                          <Button variant="success" onClick={() => handleSolicitarPresupuesto(p)}>
-                            Solicitar Presupuesto
-                          </Button>
+          {/* CARGA CON SPINER */}
+          {!prestadoresCargados ? (
+            <div className="text-center py-4">
+              <div className="spinner-border text-primary"></div>
+              <p className="mt-2">Buscando prestadores...</p>
+            </div>)
+            
+            : prestadoresMostrados.length > 0 ? (
+              <>
+                <div className="row g-4">
+                  {prestadoresMostrados.map((p) => (
+                    <div key={p.id} className="col-md-6 col-lg-4">
+                      <div className="card prestador-card h-100">
+                        <div className="card-body text-center">
+                          <div className="prestador-avatar mb-2">{p.foto}</div>
+                          <h5>{p.nombrePublico}</h5>
+                          <p className="text-muted">{p.categoria} • {p.localidad}</p>
+                          <div>{renderEstrellas(p.calificacionPromedio)}</div>
+                          <small className="text-muted d-block mb-2">
+                            {p.cantidadResenas} reseñas • {p.trabajosRealizados} trabajos
+                          </small>
+                          <div className="info-box mb-3">{p.experiencia}</div>
+                          <div className="d-grid gap-2">
+                            <Button variant="outline-primary" onClick={() => navigate(`/perfil/${p.id}`)}>
+                              Ver Perfil
+                            </Button>
+                            <Button variant="success" onClick={() => handleSolicitarPresupuesto(p)}>
+                              Solicitar Presupuesto
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Ver más (solo en estado Iniciada cuando no se buscan cercanos) */}
-              {!buscarCercanos && prestadoresRecomendados.length > 3 && (
-                <div className="text-center mt-4">
-                  <Button variant="outline-secondary" size="large" onClick={() => setMostrarTodos(!mostrarTodos)}>
-                    {mostrarTodos ? 'Ver menos' : `Ver todos (${prestadoresRecomendados.length})`}
-                  </Button>
+                  ))}
                 </div>
-              )}
-            </>
-          ) : (
+
+                {/* Ver más (solo en estado Iniciada cuando no se buscan cercanos) */}
+                {!buscarCercanos && prestadoresRecomendados.length > 3 && (
+                  <div className="text-center mt-4">
+                    <Button variant="outline-secondary" size="large" onClick={() => setMostrarTodos(!mostrarTodos)}>
+                      {mostrarTodos ? 'Ver menos' : `Ver todos (${prestadoresRecomendados.length})`}
+                    </Button>
+                  </div>
+                )}
+              </>
+            ) : (
             <div className="alert alert-warning text-center">
               <h5>No se encontraron prestadores de {solicitud.categoria} en {solicitud.localidad}</h5>
               {prestadoresEnZonasCercanas.length > 0 && !buscarCercanos ? (
@@ -361,11 +415,10 @@ function SolicitudDetalle() {
                   <div className="card-body">
                     <div className="d-flex justify-content-between mb-3">
                       <h5>{p.prestadorNombre}</h5>
-                      <span className={`badge ${
-                        p.estado === 'Aceptado' ? 'bg-success' : 
-                        p.estado === 'Completado' ? 'bg-primary' : 
-                        'bg-warning text-dark'
-                      }`}>
+                      <span className={`badge ${p.estado === 'Aceptado' ? 'bg-success' :
+                        p.estado === 'Completado' ? 'bg-primary' :
+                          'bg-warning text-dark'
+                        }`}>
                         {p.estado}
                       </span>
                     </div>
@@ -468,7 +521,7 @@ function SolicitudDetalle() {
               Esta solicitud ha sido cerrada exitosamente. El trabajo fue completado y calificado.
             </p>
           </div>
-          
+
           <div className="card trabajo-finalizado mt-4">
             <div className="card-body">
               <h5 className="text-center mb-4">Resumen del Trabajo Finalizado</h5>
@@ -512,7 +565,7 @@ function SolicitudDetalle() {
                     <p className="fs-4 text-success fw-bold">${presupuestoSeleccionado.monto.toLocaleString()}</p>
                     <p>{presupuestoSeleccionado.mensaje}</p>
                   </div>
-                  
+
                   {!presupuestoAceptado ? (
                     <div className="alert alert-info">
                       <i className="bi bi-info-circle me-2"></i>
@@ -526,10 +579,10 @@ function SolicitudDetalle() {
                       </h6>
                       <p className="mb-1">📞 {presupuestoSeleccionado.datosContacto.telefono}</p>
                       <p className="mb-1">📧 {presupuestoSeleccionado.datosContacto.email}</p>
-                      <a 
-                        href={presupuestoSeleccionado.datosContacto.whatsapp} 
-                        target="_blank" 
-                        rel="noreferrer" 
+                      <a
+                        href={presupuestoSeleccionado.datosContacto.whatsapp}
+                        target="_blank"
+                        rel="noreferrer"
                         className="btn btn-success btn-sm w-100 mt-2"
                       >
                         <i className="bi bi-whatsapp me-2"></i>Contactar por WhatsApp
@@ -581,7 +634,7 @@ function SolicitudDetalle() {
                     <h5>¿Cómo fue el servicio?</h5>
                     <p className="text-muted">Tu calificación ayuda a otros usuarios a tomar mejores decisiones</p>
                   </div>
-                  
+
                   <div className="text-center mb-4">
                     <p className="fw-bold mb-3">Selecciona tu calificación:</p>
                     <div className="estrellas-container">
@@ -600,8 +653,8 @@ function SolicitudDetalle() {
 
                   <div className="mb-3">
                     <label htmlFor="comentario" className="form-label">Comentario (opcional)</label>
-                    <textarea 
-                      className="form-control" 
+                    <textarea
+                      className="form-control"
                       id="comentario"
                       rows="3"
                       placeholder="Comparte tu experiencia con este prestador..."
